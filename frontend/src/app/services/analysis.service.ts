@@ -89,6 +89,9 @@ export interface AnalysisResult {
   success: boolean;
   pr_url: string;
   pr_title: string;
+  pr_description: string;
+  author: string;
+  name: string;
   repo_name: string;
   change_analysis: ChangeAnalysis;
   blast_radius: BlastRadius;

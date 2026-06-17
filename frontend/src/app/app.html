@@ -30,7 +30,12 @@
       </div>
 
       <div class="quick-actions">
-        <button class="secondary-action" type="button" (click)="reset()" [disabled]="state === 'idle' && !prUrl">
+        <button
+          class="secondary-action"
+          type="button"
+          (click)="reset()"
+          [disabled]="state === 'idle' && !prUrl"
+        >
           Reset
         </button>
       </div>
@@ -81,8 +86,9 @@
       <div class="results-header">
         <div>
           <p class="results-repo">{{ result.repo_name }}</p>
-          <h2>{{ result.pr_title || 'Pull Request Analysis' }}</h2>
+          <h2>{{ result.name || result.pr_title || 'Pull Request Analysis' }}</h2>
           <p class="results-url">{{ result.pr_url }}</p>
+          <p class="results-url" *ngIf="result.author">Author: {{ result.author }}</p>
         </div>
 
         <div class="results-score" [attr.data-tone]="result.confidence_report.recommendation_color">

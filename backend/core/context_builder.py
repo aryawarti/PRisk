@@ -89,9 +89,13 @@ def fetch_pr_data(owner: str, repo: str, pr_number: int) -> dict:
             diff_lines.append(file.patch)
             diff_lines.append("")           # blank separator between files
 
+    author = pull.user.login if pull.user else ""
+
     return {
         "title": pull.title,
         "description": pull.body or "",
+        "author": author,
+        "name": pull.title,
         "diff": "\n".join(diff_lines),
         "changed_files": changed_files,
         "base_sha": pull.base.sha,
@@ -251,6 +255,10 @@ def build_repository_context(pr_url: str) -> PRiskState:
         diff=pr_data["diff"],
         changed_files=pr_data["changed_files"],
         repo_summary=repo_summary,
+        pr_title=pr_data["title"],
+        pr_description=pr_data["description"],
+        author=pr_data["author"],
+        name=pr_data["name"],
         change_analysis={},
         blast_radius={},
         engineering_review={},

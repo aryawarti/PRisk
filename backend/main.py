@@ -59,6 +59,10 @@ class AnalyseResponse(BaseModel):
     """What we send back to the frontend."""
     success: bool
     pr_url: str
+    pr_title: str
+    pr_description: str
+    author: str
+    name: str
     repo_name: str
     change_analysis: dict
     blast_radius: dict
@@ -101,6 +105,10 @@ async def analyse_pr(request: AnalyseRequest):
         return AnalyseResponse(
             success=True,
             pr_url=final_state["pr_url"],
+            pr_title=final_state.get("pr_title", ""),
+            pr_description=final_state.get("pr_description", ""),
+            author=final_state.get("author", ""),
+            name=final_state.get("name", ""),
             repo_name=final_state["repo_name"],
             change_analysis=final_state["change_analysis"],
             blast_radius=final_state["blast_radius"],
