@@ -1,0 +1,104 @@
+<div class="shell">
+  <header class="shell-header">
+    <div class="brand">
+      <p class="brand-kicker">DiffVision</p>
+      <h1>PR Risk Review Workspace</h1>
+    </div>
+
+    <div class="status-chip" [attr.data-state]="state">
+      <span class="status-dot"></span>
+      {{ stateLabel }}
+    </div>
+  </header>
+
+  <section class="workspace">
+    <div class="input-panel">
+      <label class="field-label" for="pr-url">GitHub Pull Request URL</label>
+
+      <div class="input-row">
+        <input
+          id="pr-url"
+          class="pr-input"
+          type="url"
+          [(ngModel)]="prUrl"
+          placeholder="https://github.com/owner/repo/pull/42"
+          (keydown.enter)="analyse()"
+        />
+        <button class="primary-action" type="button" (click)="analyse()" [disabled]="!prUrl.trim()">
+          Analyse PR
+        </button>
+      </div>
+
+      <div class="quick-actions">
+        <button class="secondary-action" type="button" (click)="reset()" [disabled]="state === 'idle' && !prUrl">
+          Reset
+        </button>
+      </div>
+
+      <div class="error-panel" *ngIf="state === 'error'">
+        <p class="panel-title">Analysis failed</p>
+        <p class="panel-copy">{{ errorMessage }}</p>
+      </div>
+
+      <div class="loading-panel" *ngIf="state === 'loading'">
+        <div class="loading-steps">
+          <div class="loading-step" [class.active]="loadingStep >= 0">
+            <span class="step-index">1</span>
+            <div>
+              <p class="step-title">Fetching pull request metadata</p>
+              <p class="step-copy">GitHub URL, files, and patch data</p>
+            </div>
+          </div>
+
+          <div class="loading-step" [class.active]="loadingStep >= 1">
+            <span class="step-index">2</span>
+            <div>
+              <p class="step-title">Building repository context</p>
+              <p class="step-copy">Structure summary and dependency signals</p>
+            </div>
+          </div>
+
+          <div class="loading-step" [class.active]="loadingStep >= 2">
+            <span class="step-index">3</span>
+            <div>
+              <p class="step-title">Running agent analysis</p>
+              <p class="step-copy">Change, blast radius, engineering, and tests</p>
+            </div>
+          </div>
+
+          <div class="loading-step" [class.active]="loadingStep >= 3">
+            <span class="step-index">4</span>
+            <div>
+              <p class="step-title">Scoring merge confidence</p>
+              <p class="step-copy">Executive recommendation and guidance</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-panel" *ngIf="result; else emptyState">
+      <div class="results-header">
+        <div>
+          <p class="results-repo">{{ result.repo_name }}</p>
+          <h2>{{ result.pr_title || 'Pull Request Analysis' }}</h2>
+          <p class="results-url">{{ result.pr_url }}</p>
+        </div>
+
+        <div class="results-score" [attr.data-tone]="result.confidence_report.recommendation_color">
+          <span class="score-value">{{ result.confidence_report.score }}</span>
+          <span class="score-meta">Confidence</span>
+        </div>
+      </div>
+
+      <app-dashboard [result]="result"></app-dashboard>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="empty-panel">
+        <p class="panel-title">Waiting for analysis</p>
+        <p class="panel-copy">Submit a pull request URL to open the five review sections.</p>
+      </div>
+    </ng-template>
+  </section>
+</div>
