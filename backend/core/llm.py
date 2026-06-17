@@ -52,7 +52,7 @@ def get_llm() -> BaseChatModel:
         from langchain_groq import ChatGroq
 
         return ChatGroq(
-            model=os.getenv("GROQ_MODEL", "llama3-70b-8192"),
+            model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
             temperature=0,
             groq_api_key=_require_env("GROQ_API_KEY"),
         )
