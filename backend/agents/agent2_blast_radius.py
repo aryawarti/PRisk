@@ -1,7 +1,7 @@
 """
 Agent 2: Blast Radius Agent
 ----------------------------
-THE MOST IMPORTANT AGENT. This is what makes DiffVision unique.
+THE MOST IMPORTANT AGENT. This is what makes PRisk unique.
 
 WHAT IT DOES:
   Analyses the changed files, scans the diff for class/method names,
@@ -28,7 +28,7 @@ OUTPUT (written back to state):
 """
 
 import json
-from core.state import DiffVisionState
+from core.state import PRiskState
 from core.fallbacks import (
     infer_blast_radius,
     infer_change_analysis,
@@ -40,7 +40,7 @@ from core.llm import get_llm
 MAX_DIFF_CHARS = 4000
 
 
-def blast_radius_agent(state: DiffVisionState) -> DiffVisionState:
+def blast_radius_agent(state: PRiskState) -> PRiskState:
     """
     LangGraph node function for the Blast Radius Agent.
 

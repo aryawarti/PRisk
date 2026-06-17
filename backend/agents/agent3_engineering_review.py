@@ -22,7 +22,7 @@ OUTPUT (written back to state):
 """
 
 import json
-from core.state import DiffVisionState
+from core.state import PRiskState
 from core.fallbacks import infer_engineering_review, parse_json_response
 from core.llm import get_llm
 
@@ -30,7 +30,7 @@ from core.llm import get_llm
 MAX_DIFF_CHARS = 5000    # Give this agent a bit more context since it's reading code
 
 
-def engineering_review_agent(state: DiffVisionState) -> DiffVisionState:
+def engineering_review_agent(state: PRiskState) -> PRiskState:
     """
     LangGraph node function for the Engineering Review Agent.
 

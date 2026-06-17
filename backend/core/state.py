@@ -1,5 +1,5 @@
 """
-DiffVision LangGraph State
+PRisk LangGraph State
 --------------------------
 This is the single shared data object that flows through every node in the
 LangGraph workflow. Think of it as a "baton" passed from agent to agent.
@@ -12,7 +12,7 @@ import operator
 from typing import Annotated, TypedDict, List, Dict, Any
 
 
-class DiffVisionState(TypedDict):
+class PRiskState(TypedDict):
     # ── INPUT ──────────────────────────────────────────────────────────────
     # The raw GitHub PR URL the user submitted
     pr_url: str

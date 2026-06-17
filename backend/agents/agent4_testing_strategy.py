@@ -24,12 +24,12 @@ OUTPUT (written back to state):
 """
 
 import json
-from core.state import DiffVisionState
+from core.state import PRiskState
 from core.fallbacks import infer_testing_strategy, parse_json_response
 from core.llm import get_llm
 
 
-def testing_strategy_agent(state: DiffVisionState) -> DiffVisionState:
+def testing_strategy_agent(state: PRiskState) -> PRiskState:
     """
     LangGraph node for Testing Strategy Agent.
 

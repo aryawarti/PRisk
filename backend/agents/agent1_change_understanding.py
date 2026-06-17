@@ -20,7 +20,7 @@ OUTPUT (written back to state):
 """
 
 import json
-from core.state import DiffVisionState
+from core.state import PRiskState
 from core.fallbacks import infer_change_analysis, parse_json_response
 from core.llm import get_llm
 
@@ -30,7 +30,7 @@ from core.llm import get_llm
 MAX_DIFF_CHARS = 4000
 
 
-def change_understanding_agent(state: DiffVisionState) -> DiffVisionState:
+def change_understanding_agent(state: PRiskState) -> PRiskState:
     """
     LangGraph node function. Receives state, returns updated state.
 

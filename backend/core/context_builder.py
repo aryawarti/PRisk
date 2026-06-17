@@ -30,7 +30,7 @@ from dotenv import load_dotenv
 
 from core.llm import get_llm
 from core.fallbacks import infer_repository_summary
-from core.state import DiffVisionState
+from core.state import PRiskState
 
 load_dotenv()
 
@@ -107,7 +107,7 @@ def clone_repo(clone_url: str, token: str) -> Path:
     Clone the repo into a temp directory and return the path.
     Uses token auth so private repos work too.
     """
-    clone_dir = Path(os.getenv("REPO_CLONE_DIR", Path(tempfile.gettempdir()) / "diffvision_repos"))
+    clone_dir = Path(os.getenv("REPO_CLONE_DIR", Path(tempfile.gettempdir()) / "prisk_repos"))
     clone_dir.mkdir(parents=True, exist_ok=True)
 
     auth_url = clone_url
@@ -202,10 +202,10 @@ Keep it factual. Do not pad. Output ONLY the summary text, nothing else."""
 
 # ── Public entry point ────────────────────────────────────────────────────────
 
-def build_repository_context(pr_url: str) -> DiffVisionState:
+def build_repository_context(pr_url: str) -> PRiskState:
     """
     Main function called by the FastAPI endpoint.
-    Returns a fully populated initial DiffVisionState ready for LangGraph.
+    Returns a fully populated initial PRiskState ready for LangGraph.
 
     Steps:
       1. Parse URL
@@ -245,7 +245,7 @@ def build_repository_context(pr_url: str) -> DiffVisionState:
             shutil.rmtree(repo_path, ignore_errors=True)
 
     # Step 7: Pack into initial state
-    return DiffVisionState(
+    return PRiskState(
         pr_url=pr_url,
         repo_name=repo_name,
         diff=pr_data["diff"],

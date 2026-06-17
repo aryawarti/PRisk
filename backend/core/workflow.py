@@ -1,5 +1,5 @@
 """
-DiffVision LangGraph Workflow
+PRisk LangGraph Workflow
 ------------------------------
 This file defines HOW agents connect to each other.
 LangGraph reads this graph and figures out execution order automatically.
@@ -23,7 +23,7 @@ HOW LANGGRAPH PARALLELISM WORKS:
 
 from langgraph.graph import StateGraph, END
 
-from core.state import DiffVisionState
+from core.state import PRiskState
 from agents.agent1_change_understanding import change_understanding_agent
 from agents.agent2_blast_radius import blast_radius_agent
 from agents.agent3_engineering_review import engineering_review_agent
@@ -31,11 +31,11 @@ from agents.agent4_testing_strategy import testing_strategy_agent
 from agents.agent5_merge_confidence import merge_confidence_agent
 
 
-def _start_parallel_agents(_: DiffVisionState) -> list[str]:
+def _start_parallel_agents(_: PRiskState) -> list[str]:
     return ["change_node", "blast_node", "engineering_node"]
 
 
-def build_diffvision_graph() -> StateGraph:
+def build_prisk_graph() -> StateGraph:
     """
     Constructs and compiles the LangGraph workflow.
 
@@ -44,7 +44,7 @@ def build_diffvision_graph() -> StateGraph:
     """
 
     # Step 1: Create the graph, telling it what the state shape looks like
-    graph = StateGraph(DiffVisionState)
+    graph = StateGraph(PRiskState)
 
     # Step 2: Register each agent as a named node
     # The first argument is the node name (string)
@@ -68,10 +68,10 @@ def build_diffvision_graph() -> StateGraph:
 
 # Build the graph once at module load time (singleton pattern)
 # FastAPI will reuse this compiled graph for every request
-diffvision_graph = build_diffvision_graph()
+prisk_graph = build_prisk_graph()
 
 
-def run_analysis(initial_state: DiffVisionState) -> DiffVisionState:
+def run_analysis(initial_state: PRiskState) -> PRiskState:
     """
     Convenience function called by the FastAPI route.
 
@@ -79,5 +79,5 @@ def run_analysis(initial_state: DiffVisionState) -> DiffVisionState:
     runs the full LangGraph pipeline,
     returns the final state with all agents' outputs populated.
     """
-    final_state = diffvision_graph.invoke(initial_state)
+    final_state = prisk_graph.invoke(initial_state)
     return final_state

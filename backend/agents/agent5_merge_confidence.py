@@ -48,7 +48,7 @@ OUTPUT: state["confidence_report"]
 """
 
 import json
-from core.state import DiffVisionState
+from core.state import PRiskState
 from core.fallbacks import build_confidence_summary
 from core.llm import get_llm
 
@@ -145,7 +145,7 @@ def calculate_confidence_score(
     }
 
 
-def merge_confidence_agent(state: DiffVisionState) -> DiffVisionState:
+def merge_confidence_agent(state: PRiskState) -> PRiskState:
     """
     LangGraph node for the Merge Confidence Agent.
 
