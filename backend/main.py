@@ -30,7 +30,7 @@ from core.workflow import run_analysis
 # ── App setup ────────────────────────────────────────────────────────────────
 
 app = FastAPI(
-    title="DiffVision API",
+    title="PRisk API",
     description="AI-Powered Pull Request Risk Intelligence Platform",
     version="1.0.0",
 )
@@ -77,7 +77,7 @@ class AnalyseResponse(BaseModel):
 @app.get("/health")
 def health_check():
     """Simple liveness probe."""
-    return {"status": "ok", "service": "DiffVision API"}
+    return {"status": "ok", "service": "PRisk API"}
 
 
 @app.post("/api/analyse", response_model=AnalyseResponse)
@@ -92,14 +92,14 @@ async def analyse_pr(request: AnalyseRequest):
     try:
         # Step 1: Build initial state from GitHub
         # This fetches the PR, clones the repo, and generates a summary
-        print(f"[DiffVision] Starting analysis for: {request.pr_url}")
+        print(f"[PRisk] Starting analysis for: {request.pr_url}")
         initial_state = build_repository_context(request.pr_url)
-        print(f"[DiffVision] Context built for: {initial_state['repo_name']}")
+        print(f"[PRisk] Context built for: {initial_state['repo_name']}")
 
         # Step 2: Run the 5-agent LangGraph pipeline
-        print("[DiffVision] Running LangGraph workflow...")
+        print("[PRisk] Running LangGraph workflow...")
         final_state = run_analysis(initial_state)
-        print(f"[DiffVision] Analysis complete. Score: {final_state['confidence_report'].get('score', 'N/A')}")
+        print(f"[PRisk] Analysis complete. Score: {final_state['confidence_report'].get('score', 'N/A')}")
 
         # Step 3: Return the full report
         return AnalyseResponse(
@@ -128,7 +128,7 @@ async def analyse_pr(request: AnalyseRequest):
 
     except Exception as e:
         # Unexpected error — log it but don't expose internals to client
-        print(f"[DiffVision] Unexpected error: {traceback.format_exc()}")
+        print(f"[PRisk] Unexpected error: {traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Internal analysis error: {type(e).__name__}: {str(e)}"

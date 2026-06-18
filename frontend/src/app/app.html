@@ -1,7 +1,8 @@
+
 <div class="shell">
   <header class="shell-header">
     <div class="brand">
-      <p class="brand-kicker">DiffVision</p>
+      <p class="brand-kicker">PRisk</p>
       <h1>PR Risk Review Workspace</h1>
     </div>
 
@@ -82,11 +83,13 @@
       </div>
     </div>
 
+
     <div class="results-panel" *ngIf="result; else emptyState">
+      
       <div class="results-header">
         <div>
           <p class="results-repo">{{ result.repo_name }}</p>
-          <h2>{{ result.name || result.pr_title || 'Pull Request Analysis' }}</h2>
+          <h2>{{ result.name || result.pr_title || 'Pull Request Analysis' }}</h2> 
           <p class="results-url">{{ result.pr_url }}</p>
           <p class="results-url" *ngIf="result.author">Author: {{ result.author }}</p>
         </div>
@@ -94,14 +97,14 @@
         <div class="results-score" [attr.data-tone]="result.confidence_report.recommendation_color">
           <span class="score-value">{{ result.confidence_report.score }}</span>
           <span class="score-meta">Confidence</span>
-        </div>
+        </div> 
       </div>
 
       <app-dashboard [result]="result"></app-dashboard>
     </div>
 
-    <ng-template #emptyState>
-      <div class="empty-panel">
+    <ng-template #emptyState> 
+      <div class="empty-panel"> 
         <p class="panel-title">Waiting for analysis</p>
         <p class="panel-copy">Submit a pull request URL to open the five review sections.</p>
       </div>

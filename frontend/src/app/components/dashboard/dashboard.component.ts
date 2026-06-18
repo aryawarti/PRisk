@@ -32,6 +32,10 @@ export class DashboardComponent {
   showAllSections = true;
   expandedSection: DashboardSectionKey | null = null;
 
+  ngOnInit() {
+    console.log(this.result);
+  }
+
   get sections(): DashboardSection[] {
     return [
       {
@@ -141,18 +145,25 @@ export class DashboardComponent {
   isExpanded(section: DashboardSectionKey): boolean {
     return this.showAllSections || this.expandedSection === section;
   }
+  toneFromValue(value?: string): 'neutral' | 'green' | 'amber' | 'red' {
+    if (!value) {
+      return 'neutral';
+    }
 
-  toneFromValue(value: string): 'neutral' | 'green' | 'amber' | 'red' {
     const lowered = value.toLowerCase();
+
     if (lowered.includes('safe') || lowered.includes('high health') || lowered === 'low') {
       return 'green';
     }
+
     if (lowered.includes('do not merge') || lowered.includes('critical') || lowered === 'high') {
       return 'red';
     }
+
     if (lowered.includes('needs') || lowered.includes('medium')) {
       return 'amber';
     }
+
     return 'neutral';
   }
 

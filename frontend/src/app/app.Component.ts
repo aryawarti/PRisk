@@ -27,7 +27,7 @@ type AppState = 'idle' | 'loading' | 'done' | 'error';
         <div class="header-inner">
           <div class="logo">
             <span class="logo-icon">⬡</span>
-            <span class="logo-text">DiffVision</span>
+            <span class="logo-text">PRisk</span>
           </div>
           <span class="tagline">PR Risk Intelligence</span>
         </div>
