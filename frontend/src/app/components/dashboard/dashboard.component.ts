@@ -53,7 +53,7 @@ export class DashboardComponent {
       {
         key: 'engineering',
         title: 'Engineering Review',
-        badge: `${this.result.engineering_review.overall_health} Health`,
+        badge: `${this.result.engineering_review.overall_severity} Severit`,
         tone: this.toneFromValue(this.result.engineering_review.overall_severity),
       },
       {
@@ -74,16 +74,6 @@ export class DashboardComponent {
   get engineeringCategories(): ReviewCategoryView[] {
     return [
       this.buildCategory(
-        'Security',
-        this.result.engineering_review.security,
-        'No critical issues found',
-      ),
-      this.buildCategory(
-        'Performance',
-        this.result.engineering_review.performance,
-        'No material performance concerns were detected',
-      ),
-      this.buildCategory(
         'Maintainability',
         this.result.engineering_review.maintainability,
         'Maintainability remains within normal review expectations',
@@ -93,6 +83,16 @@ export class DashboardComponent {
         this.result.engineering_review.code_quality,
         'Code quality follows the current project standards',
       ),
+       this.buildCategory(
+        'Security',
+        this.result.engineering_review.security,
+        'No critical issues found',
+      ),
+      this.buildCategory(
+        'Performance',
+        this.result.engineering_review.performance,
+        'No material performance concerns were detected',
+      )
     ];
   }
 

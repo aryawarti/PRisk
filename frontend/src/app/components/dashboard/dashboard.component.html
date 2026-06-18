@@ -18,6 +18,8 @@
 
     <div class="section-panel" *ngIf="isExpanded(section.key)">
       <ng-container [ngSwitch]="section.key">
+
+        <!-- ======= CHANGE ======= -->
         <div *ngSwitchCase="'change'" class="panel-grid">
           <div class="content-block">
             <p class="label">Summary</p>
@@ -43,6 +45,12 @@
             </ul>
           </div>
 
+          <!-- ✅ moved inside 'change' panel -->
+          <div class="content-block">
+            <p class="label">Business Impact</p>
+            <p class="body-copy">{{ result.change_analysis.business_impact }}</p>
+          </div>
+
           <div class="metric-grid">
             <div class="metric-card">
               <p class="label">Change Type</p>
@@ -61,6 +69,7 @@
           </div>
         </div>
 
+        <!-- ======= BLAST ======= -->
         <div *ngSwitchCase="'blast'" class="panel-grid">
           <div class="metric-grid">
             <div class="metric-card">
@@ -105,13 +114,7 @@
           </div>
         </div>
 
-        <br />
-
-        <div class="content-block">
-          <p class="label">Business Impact</p>
-          <p class="body-copy">{{ result.change_analysis.business_impact }}</p>
-        </div>
-
+        <!-- ======= ENGINEERING ======= -->
         <div *ngSwitchCase="'engineering'" class="panel-grid">
           <div class="review-row" *ngFor="let category of engineeringCategories">
             <div class="review-header">
@@ -132,8 +135,8 @@
 
           <div class="metric-grid">
             <div class="metric-card">
-              <p class="label">Overall Engineering Health</p>
-              <p class="metric-value">{{ result.engineering_review.overall_health }}</p>
+              <p class="label">Overall Severity</p>
+              <p class="metric-value">{{ result.engineering_review.overall_severity }}</p>
             </div>
 
             <div class="metric-card">
@@ -141,8 +144,16 @@
               <p class="metric-value">{{ result.engineering_review.total_issues_found }}</p>
             </div>
           </div>
+
+          <div class="content-block" *ngIf="result.engineering_review.positive_notes?.length">
+            <p class="label">Positive Notes</p>
+            <ul class="plain-list">
+              <li *ngFor="let note of result.engineering_review.positive_notes">{{ note }}</li>
+            </ul>
+          </div>
         </div>
 
+        <!-- ======= TESTING ======= -->
         <div *ngSwitchCase="'testing'" class="panel-grid">
           <div class="content-block">
             <p class="label">Recommended Tests</p>
@@ -188,6 +199,7 @@
           </div>
         </div>
 
+        <!-- ======= CONFIDENCE ======= -->
         <div *ngSwitchCase="'confidence'" class="panel-grid">
           <div class="confidence-summary">
             <div
@@ -206,14 +218,14 @@
             </div>
           </div>
 
-          <div class="content-block" *ngIf="result.confidence_report.top_reasons.length">
+          <div class="content-block" *ngIf="result.confidence_report.top_reasons?.length">
             <p class="label">Top Reasons</p>
             <ol class="plain-list ordered">
               <li *ngFor="let reason of result.confidence_report.top_reasons">{{ reason }}</li>
             </ol>
           </div>
 
-          <div class="content-block" *ngIf="result.confidence_report.merge_guidance.length">
+          <div class="content-block" *ngIf="result.confidence_report.merge_guidance?.length">
             <p class="label">Merge Guidance</p>
             <ul class="plain-list">
               <li *ngFor="let step of result.confidence_report.merge_guidance">{{ step }}</li>
@@ -243,6 +255,7 @@
             </div>
           </div>
         </div>
+
       </ng-container>
     </div>
   </section>

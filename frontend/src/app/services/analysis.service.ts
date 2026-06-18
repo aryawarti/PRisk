@@ -34,9 +34,9 @@ export interface AnalysisResult {
     performance: string[];
     maintainability: string[];
     code_quality: string[];
-    overall_health: string;
     overall_severity: string;
     total_issues_found: number;
+    positive_notes: string[];
   };
   testing_strategy: {
     recommended_tests: { name: string; purpose: string }[];
