@@ -1,5 +1,5 @@
 <div class="dashboard">
-   <section class="section-card" *ngFor="let section of sections"> 
+  <section class="section-card" *ngFor="let section of sections">
     <button
       class="section-card-header"
       type="button"
@@ -25,8 +25,22 @@
           </div>
 
           <div class="content-block">
-            <p class="label">Why Changed</p>
-            <p class="body-copy">{{ result.change_analysis.why_changed }}</p>
+            <p class="label">Affected Module</p>
+            <div class="token-row">
+              <span
+                class="token"
+                *ngFor="let module of result.change_analysis.affected_module.split(',')"
+              >
+                {{ module.trim() }}
+              </span>
+            </div>
+          </div>
+
+          <div class="content-block">
+            <p class="label">Key Changes</p>
+            <ul class="plain-list">
+              <li *ngFor="let change of result.change_analysis.key_changes">{{ change }}</li>
+            </ul>
           </div>
 
           <div class="metric-grid">
@@ -36,8 +50,8 @@
             </div>
 
             <div class="metric-card">
-              <p class="label">Affected Business Area</p>
-              <p class="metric-value">{{ result.change_analysis.business_area }}</p>
+              <p class="label">Estimated Lines Changed</p>
+              <p class="metric-value">{{ result.change_analysis.estimated_lines_changed }}</p>
             </div>
 
             <div class="metric-card">
@@ -45,20 +59,17 @@
               <p class="metric-value">{{ result.change_analysis.complexity }}</p>
             </div>
           </div>
-
-          <div class="content-block">
-            <p class="label">Files Analyzed</p>
-            <ul class="plain-list">
-              <li *ngFor="let file of result.change_analysis.files_analyzed">{{ file }}</li>
-            </ul>
-          </div>
+        </div>
+        <div class="content-block">
+          <p class="label">Business Impact</p>
+          <p class="body-copy">{{ result.change_analysis.business_impact }}</p>
         </div>
 
         <div *ngSwitchCase="'blast'" class="panel-grid">
           <div class="metric-grid">
             <div class="metric-card">
-              <p class="label">Risk Level</p>
-              <p class="metric-value">{{ result.blast_radius.risk_level }}</p>
+              <p class="label">Impact Level</p>
+              <p class="metric-value">{{ result.blast_radius.impact_level }}</p>
             </div>
 
             <div class="metric-card">
@@ -76,19 +87,6 @@
             </div>
           </div>
 
-          <div
-            class="content-block"
-            *ngIf="result.blast_radius.dependency_hotspots.length; else dependencyChains"
-          >
-            <p class="label">Dependency Impact</p>
-            <div class="hotspot" *ngFor="let hotspot of result.blast_radius.dependency_hotspots">
-              <p class="hotspot-title">{{ hotspot.component }}</p>
-              <ul class="plain-list compact">
-                <li *ngFor="let consumer of hotspot.used_by">{{ consumer }}</li>
-              </ul>
-            </div>
-          </div>
-
           <ng-template #dependencyChains>
             <div class="content-block">
               <p class="label">Dependency Impact</p>
@@ -99,8 +97,8 @@
           </ng-template>
 
           <div class="content-block">
-            <p class="label">Why Risk Is {{ result.blast_radius.risk_level }}</p>
-            <p class="body-copy">{{ result.blast_radius.high_risk_reason }}</p>
+            <p class="label">Reasoning</p>
+            <p class="body-copy">{{ result.blast_radius.reasoning }}</p>
           </div>
         </div>
 

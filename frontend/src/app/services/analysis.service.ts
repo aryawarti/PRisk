@@ -14,19 +14,20 @@ export interface AnalysisResult {
   repo_name: string;
   change_analysis: {
     summary: string;
-    why_changed: string;
     change_type: string;
-    business_area: string;
+    affected_module: string;
     complexity: string;
-    files_analyzed: string[];
+    estimated_lines_changed: number;
+    key_changes: string[];
+    business_impact: string;
   };
   blast_radius: {
-    risk_level: string;
-    estimated_downstream_services: number;
     affected_modules: string[];
-    dependency_hotspots: { component: string; used_by: string[] }[];
+    impact_level: string;
+    reasoning: string;
     dependency_chain: string[];
-    high_risk_reason: string;
+    user_flows_at_risk: string[];
+    estimated_downstream_services: number;
   };
   engineering_review: {
     security: string[];

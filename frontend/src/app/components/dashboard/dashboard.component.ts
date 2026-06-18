@@ -29,7 +29,7 @@ interface ReviewCategoryView {
 export class DashboardComponent {
   @Input({ required: true }) result!: AnalysisResult;
 
-  showAllSections = true;
+  // ✅ FIXED: Start with nothing expanded
   expandedSection: DashboardSectionKey | null = null;
 
   ngOnInit() {
@@ -47,8 +47,8 @@ export class DashboardComponent {
       {
         key: 'blast',
         title: 'Blast Radius Analysis',
-        badge: this.result.blast_radius.risk_level,
-        tone: this.toneFromValue(this.result.blast_radius.risk_level),
+        badge: this.result.blast_radius.impact_level,
+        tone: this.toneFromValue(this.result.blast_radius.impact_level),
       },
       {
         key: 'engineering',
@@ -126,25 +126,16 @@ export class DashboardComponent {
     return Math.max(0, Math.min(100, this.result.confidence_report.score));
   }
 
+  // ✅ FIXED: Simple open/close toggle — clicking same section closes it
   toggleSection(section: DashboardSectionKey): void {
-    if (this.showAllSections) {
-      this.showAllSections = false;
-      this.expandedSection = section;
-      return;
-    }
-
-    if (this.expandedSection === section) {
-      this.showAllSections = true;
-      this.expandedSection = null;
-      return;
-    }
-
-    this.expandedSection = section;
+    this.expandedSection = this.expandedSection === section ? null : section;
   }
 
+  // ✅ FIXED: Only the actively clicked section is expanded
   isExpanded(section: DashboardSectionKey): boolean {
-    return this.showAllSections || this.expandedSection === section;
+    return this.expandedSection === section;
   }
+
   toneFromValue(value?: string): 'neutral' | 'green' | 'amber' | 'red' {
     if (!value) {
       return 'neutral';
