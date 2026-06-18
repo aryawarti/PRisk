@@ -60,10 +60,6 @@
             </div>
           </div>
         </div>
-        <div class="content-block">
-          <p class="label">Business Impact</p>
-          <p class="body-copy">{{ result.change_analysis.business_impact }}</p>
-        </div>
 
         <div *ngSwitchCase="'blast'" class="panel-grid">
           <div class="metric-grid">
@@ -87,19 +83,33 @@
             </div>
           </div>
 
-          <ng-template #dependencyChains>
-            <div class="content-block">
-              <p class="label">Dependency Impact</p>
-              <ul class="plain-list">
-                <li *ngFor="let chain of result.blast_radius.dependency_chain">{{ chain }}</li>
-              </ul>
+          <div class="content-block">
+            <p class="label">Dependency Chain</p>
+            <ul class="plain-list">
+              <li *ngFor="let chain of result.blast_radius.dependency_chain">{{ chain }}</li>
+            </ul>
+          </div>
+
+          <div class="content-block">
+            <p class="label">User Flows at Risk</p>
+            <div class="token-row">
+              <span class="token" *ngFor="let flow of result.blast_radius.user_flows_at_risk">
+                {{ flow }}
+              </span>
             </div>
-          </ng-template>
+          </div>
 
           <div class="content-block">
             <p class="label">Reasoning</p>
             <p class="body-copy">{{ result.blast_radius.reasoning }}</p>
           </div>
+        </div>
+
+        <br />
+
+        <div class="content-block">
+          <p class="label">Business Impact</p>
+          <p class="body-copy">{{ result.change_analysis.business_impact }}</p>
         </div>
 
         <div *ngSwitchCase="'engineering'" class="panel-grid">
