@@ -53,7 +53,7 @@ export class DashboardComponent {
       {
         key: 'engineering',
         title: 'Engineering Review',
-        badge: `${this.result.engineering_review.overall_severity} Severit`,
+        badge: `${this.result.engineering_review.overall_severity}`,
         tone: this.toneFromValue(this.result.engineering_review.overall_severity),
       },
       {
@@ -179,4 +179,26 @@ export class DashboardComponent {
       summary: findings[0],
     };
   }
+
+  getProgressTone(score: number, max: number): string {
+  const pct = (score / max) * 100;
+  if (pct >= 75) return 'green';
+  if (pct >= 50) return 'amber';
+  return 'red';
+}
+
+getInputLevel(label: string): string {
+  const levels = this.result.confidence_report.input_levels;
+  switch (label) {
+    case 'Blast Radius': return levels.blast_radius_level;
+    case 'Engineering':  return levels.engineering_severity;
+    case 'Testing':      return levels.testing_assessment;
+    case 'Complexity':   return levels.complexity;
+    default:             return '';
+  }
+}
+
+getInputLevelTone(label: string): string {
+  return this.toneFromValue(this.getInputLevel(label));
+}
 }

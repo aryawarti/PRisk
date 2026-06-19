@@ -212,79 +212,51 @@
 
         <!-- ======= CONFIDENCE ======= -->
       <!-- ======= CONFIDENCE ======= -->
+<!-- ======= CONFIDENCE ======= -->
 <div *ngSwitchCase="'confidence'" class="panel-grid">
-  <div class="confidence-summary">
-    <div
-      class="confidence-score"
-      [attr.data-tone]="result.confidence_report.recommendation_color"
-    >
+
+  <!-- Hero Score Block -->
+  <div class="confidence-hero" [attr.data-tone]="result.confidence_report.recommendation_color">
+    <div class="confidence-hero-score">
       <span class="confidence-value">{{ result.confidence_report.score }}</span>
       <span class="confidence-unit">%</span>
     </div>
-
-    <div class="confidence-copy">
+    <div class="confidence-hero-right">
       <span class="badge" [attr.data-tone]="result.confidence_report.recommendation_color">
         {{ result.confidence_report.recommendation }}
       </span>
-      <p class="body-copy">{{ result.confidence_report.executive_summary }}</p>
+      <p class="confidence-executive">{{ result.confidence_report.executive_summary }}</p>
     </div>
   </div>
 
-  <!-- Input Levels — EXISTS in JSON, was never shown -->
-  <div class="content-block">
-    <p class="label">Input Levels</p>
-    <div class="metric-grid">
-      <div class="metric-card">
-        <p class="label">Blast Radius</p>
-        <p class="metric-value">{{ result.confidence_report.input_levels.blast_radius_level }}</p>
+  <!-- Score Breakdown Cards with Progress Bars -->
+  <div class="breakdown-card-grid">
+    <div class="breakdown-card" *ngFor="let item of scoreBreakdownItems">
+      <div class="breakdown-card-top">
+        <p class="breakdown-card-label">{{ item.label }}</p>
+        <span class="breakdown-card-score">{{ item.score }}<span class="breakdown-card-max">/{{ item.max }}</span></span>
       </div>
-      <div class="metric-card">
-        <p class="label">Engineering</p>
-        <p class="metric-value">{{ result.confidence_report.input_levels.engineering_severity }}</p>
+      <div class="progress-track">
+        <div
+          class="progress-fill"
+          [style.width.%]="(item.score / item.max) * 100"
+          [attr.data-tone]="getProgressTone(item.score, item.max)"
+        ></div>
       </div>
-      <div class="metric-card">
-        <p class="label">Testing</p>
-        <p class="metric-value">{{ result.confidence_report.input_levels.testing_assessment }}</p>
-      </div>
-      <div class="metric-card">
-        <p class="label">Complexity</p>
-        <p class="metric-value">{{ result.confidence_report.input_levels.complexity }}</p>
-      </div>
+      <span class="badge" [attr.data-tone]="getInputLevelTone(item.label)">
+        {{ getInputLevel(item.label) }}
+      </span>
     </div>
   </div>
 
-  <!-- Confidence Visualization -->
-  <div class="content-block">
-    <p class="label">Confidence Visualization</p>
-    <div class="confidence-scale">
-      <div class="scale-line"></div>
-      <div class="scale-marker" [style.left.%]="confidenceMarkerPosition"></div>
-      <div class="scale-labels">
-        <span>0</span>
-        <span>25</span>
-        <span>50</span>
-        <span>75</span>
-        <span>100</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Score Breakdown -->
-  <div class="content-block">
-    <p class="label">Score Breakdown</p>
-    <div class="breakdown-row" *ngFor="let item of scoreBreakdownItems">
-      <span>{{ item.label }}</span>
-      <span>{{ item.score }}/{{ item.max }}</span>
-    </div>
-  </div>
-
-  <!-- Errors — show only if present -->
-  <div class="content-block" *ngIf="result.confidence_report.errors_during_analysis?.length">
+  <!-- Errors During Analysis — only if present -->
+  <div class="content-block" *ngIf="result.confidence_report.errors_during_analysis.length">
     <p class="label">Errors During Analysis</p>
     <ul class="plain-list">
       <li *ngFor="let error of result.confidence_report.errors_during_analysis">{{ error }}</li>
     </ul>
   </div>
+
 </div>
 
       </ng-container>

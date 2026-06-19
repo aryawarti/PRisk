@@ -337,3 +337,150 @@
     min-width: 78px;
   }
 }
+
+/* ── Confidence Hero ── */
+.confidence-hero {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 20px;
+  align-items: center;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #dbe5eb;
+  background: #f8fbfc;
+}
+
+.confidence-hero[data-tone='green'] {
+  border-color: #a7cdc0;
+  background: #eff8f4;
+}
+
+.confidence-hero[data-tone='amber'] {
+  border-color: #ead191;
+  background: #fff8e8;
+}
+
+.confidence-hero[data-tone='red'] {
+  border-color: #e0b3b0;
+  background: #fff4f3;
+}
+
+.confidence-hero-score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 16px 24px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.confidence-hero[data-tone='green'] .confidence-value,
+.confidence-hero[data-tone='green'] .confidence-unit {
+  color: #215a4f;
+}
+
+.confidence-hero[data-tone='amber'] .confidence-value,
+.confidence-hero[data-tone='amber'] .confidence-unit {
+  color: #8e6200;
+}
+
+.confidence-hero[data-tone='red'] .confidence-value,
+.confidence-hero[data-tone='red'] .confidence-unit {
+  color: #8d3530;
+}
+
+.confidence-hero-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.confidence-executive {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #3a4f5c;
+}
+
+/* ── Breakdown Cards ── */
+.breakdown-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.breakdown-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #e0e8ed;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.breakdown-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.breakdown-card-label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #52606d;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.breakdown-card-score {
+  font-size: 18px;
+  font-weight: 700;
+  color: #14202b;
+}
+
+.breakdown-card-max {
+  font-size: 13px;
+  font-weight: 500;
+  color: #8a9ba8;
+}
+
+/* ── Progress Bar ── */
+.progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #eef3f6;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+  background: #8a9ba8;
+}
+
+.progress-fill[data-tone='green'] {
+  background: #4caf8d;
+}
+
+.progress-fill[data-tone='amber'] {
+  background: #e0a930;
+}
+
+.progress-fill[data-tone='red'] {
+  background: #d95f5a;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .confidence-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .breakdown-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
