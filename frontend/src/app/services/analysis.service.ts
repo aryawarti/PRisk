@@ -39,11 +39,13 @@ export interface AnalysisResult {
     positive_notes: string[];
   };
   testing_strategy: {
-    recommended_tests: { name: string; purpose: string }[];
-    regression_risk_level: string;
-    test_coverage_assessment: string;
-    regression_reason: string;
+    missing_tests: string[];
+    edge_cases: string[];
+    regression_risks: string[];
     recommended_test_types: string[];
+    priority_tests: string[];
+    test_coverage_assessment: string;
+    total_tests_recommended: number;
   };
   confidence_report: {
     score: number;

@@ -59,8 +59,8 @@ export class DashboardComponent {
       {
         key: 'testing',
         title: 'Testing Strategy',
-        badge: this.result.testing_strategy.regression_risk_level,
-        tone: this.toneFromValue(this.result.testing_strategy.regression_risk_level),
+        badge: this.result.testing_strategy.test_coverage_assessment,
+        tone: this.toneFromValue(this.result.testing_strategy.test_coverage_assessment),
       },
       {
         key: 'confidence',

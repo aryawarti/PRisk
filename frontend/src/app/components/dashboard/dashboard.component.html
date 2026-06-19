@@ -45,7 +45,6 @@
             </ul>
           </div>
 
-          <!-- ✅ moved inside 'change' panel -->
           <div class="content-block">
             <p class="label">Business Impact</p>
             <p class="body-copy">{{ result.change_analysis.business_impact }}</p>
@@ -86,9 +85,9 @@
           <div class="content-block">
             <p class="label">Potentially Impacted Modules</p>
             <div class="token-row">
-              <span class="token" *ngFor="let module of result.blast_radius.affected_modules">{{
-                module
-              }}</span>
+              <span class="token" *ngFor="let module of result.blast_radius.affected_modules">
+                {{ module }}
+              </span>
             </div>
           </div>
 
@@ -155,47 +154,59 @@
 
         <!-- ======= TESTING ======= -->
         <div *ngSwitchCase="'testing'" class="panel-grid">
-          <div class="content-block">
-            <p class="label">Recommended Tests</p>
-            <div
-              class="test-plan"
-              *ngFor="let test of result.testing_strategy.recommended_tests; let index = index"
-            >
-              <div class="test-index">{{ index + 1 }}</div>
-              <div>
-                <p class="test-name">{{ test.name }}</p>
-                <p class="test-purpose">{{ test.purpose }}</p>
-              </div>
-            </div>
-          </div>
-
           <div class="metric-grid">
-            <div class="metric-card">
-              <p class="label">Regression Risk</p>
-              <p class="metric-value">{{ result.testing_strategy.regression_risk_level }}</p>
-            </div>
-
             <div class="metric-card">
               <p class="label">Coverage Assessment</p>
               <p class="metric-value">{{ result.testing_strategy.test_coverage_assessment }}</p>
             </div>
+
+            <div class="metric-card">
+              <p class="label">Total Tests Recommended</p>
+              <p class="metric-value">{{ result.testing_strategy.total_tests_recommended }}</p>
+            </div>
           </div>
 
-          <div class="content-block">
-            <p class="label">Regression Reason</p>
-            <p class="body-copy">{{ result.testing_strategy.regression_reason }}</p>
-          </div>
-
-          <div class="content-block" *ngIf="result.testing_strategy.recommended_test_types.length">
-            <p class="label">Recommended Types</p>
+          <div class="content-block" *ngIf="result.testing_strategy.recommended_test_types?.length">
+            <p class="label">Recommended Test Types</p>
             <div class="token-row">
-              <span
-                class="token"
-                *ngFor="let type of result.testing_strategy.recommended_test_types"
-              >
+              <span class="token" *ngFor="let type of result.testing_strategy.recommended_test_types">
                 {{ type }}
               </span>
             </div>
+          </div>
+
+          <div class="content-block" *ngIf="result.testing_strategy.priority_tests?.length">
+            <p class="label">Priority Tests</p>
+            <div
+              class="test-plan"
+              *ngFor="let test of result.testing_strategy.priority_tests; let index = index"
+            >
+              <div class="test-index">{{ index + 1 }}</div>
+              <div>
+                <p class="test-name">{{ test }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="content-block" *ngIf="result.testing_strategy.missing_tests?.length">
+            <p class="label">Missing Tests</p>
+            <ul class="plain-list">
+              <li *ngFor="let test of result.testing_strategy.missing_tests">{{ test }}</li>
+            </ul>
+          </div>
+
+          <div class="content-block" *ngIf="result.testing_strategy.edge_cases?.length">
+            <p class="label">Edge Cases</p>
+            <ul class="plain-list">
+              <li *ngFor="let edge of result.testing_strategy.edge_cases">{{ edge }}</li>
+            </ul>
+          </div>
+
+          <div class="content-block" *ngIf="result.testing_strategy.regression_risks?.length">
+            <p class="label">Regression Risks</p>
+            <ul class="plain-list">
+              <li *ngFor="let risk of result.testing_strategy.regression_risks">{{ risk }}</li>
+            </ul>
           </div>
         </div>
 
