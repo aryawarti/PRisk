@@ -211,61 +211,81 @@
         </div>
 
         <!-- ======= CONFIDENCE ======= -->
-        <div *ngSwitchCase="'confidence'" class="panel-grid">
-          <div class="confidence-summary">
-            <div
-              class="confidence-score"
-              [attr.data-tone]="result.confidence_report.recommendation_color"
-            >
-              <span class="confidence-value">{{ result.confidence_report.score }}</span>
-              <span class="confidence-unit">%</span>
-            </div>
+      <!-- ======= CONFIDENCE ======= -->
+<div *ngSwitchCase="'confidence'" class="panel-grid">
+  <div class="confidence-summary">
+    <div
+      class="confidence-score"
+      [attr.data-tone]="result.confidence_report.recommendation_color"
+    >
+      <span class="confidence-value">{{ result.confidence_report.score }}</span>
+      <span class="confidence-unit">%</span>
+    </div>
 
-            <div class="confidence-copy">
-              <span class="badge" [attr.data-tone]="result.confidence_report.recommendation_color">
-                {{ result.confidence_report.recommendation }}
-              </span>
-              <p class="body-copy">{{ result.confidence_report.executive_summary }}</p>
-            </div>
-          </div>
+    <div class="confidence-copy">
+      <span class="badge" [attr.data-tone]="result.confidence_report.recommendation_color">
+        {{ result.confidence_report.recommendation }}
+      </span>
+      <p class="body-copy">{{ result.confidence_report.executive_summary }}</p>
+    </div>
+  </div>
 
-          <div class="content-block" *ngIf="result.confidence_report.top_reasons?.length">
-            <p class="label">Top Reasons</p>
-            <ol class="plain-list ordered">
-              <li *ngFor="let reason of result.confidence_report.top_reasons">{{ reason }}</li>
-            </ol>
-          </div>
+  <!-- Input Levels — EXISTS in JSON, was never shown -->
+  <div class="content-block">
+    <p class="label">Input Levels</p>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <p class="label">Blast Radius</p>
+        <p class="metric-value">{{ result.confidence_report.input_levels.blast_radius_level }}</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Engineering</p>
+        <p class="metric-value">{{ result.confidence_report.input_levels.engineering_severity }}</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Testing</p>
+        <p class="metric-value">{{ result.confidence_report.input_levels.testing_assessment }}</p>
+      </div>
+      <div class="metric-card">
+        <p class="label">Complexity</p>
+        <p class="metric-value">{{ result.confidence_report.input_levels.complexity }}</p>
+      </div>
+    </div>
+  </div>
 
-          <div class="content-block" *ngIf="result.confidence_report.merge_guidance?.length">
-            <p class="label">Merge Guidance</p>
-            <ul class="plain-list">
-              <li *ngFor="let step of result.confidence_report.merge_guidance">{{ step }}</li>
-            </ul>
-          </div>
+  <!-- Confidence Visualization -->
+  <div class="content-block">
+    <p class="label">Confidence Visualization</p>
+    <div class="confidence-scale">
+      <div class="scale-line"></div>
+      <div class="scale-marker" [style.left.%]="confidenceMarkerPosition"></div>
+      <div class="scale-labels">
+        <span>0</span>
+        <span>25</span>
+        <span>50</span>
+        <span>75</span>
+        <span>100</span>
+      </div>
+    </div>
+  </div>
 
-          <div class="content-block">
-            <p class="label">Confidence Visualization</p>
-            <div class="confidence-scale">
-              <div class="scale-line"></div>
-              <div class="scale-marker" [style.left.%]="confidenceMarkerPosition"></div>
-              <div class="scale-labels">
-                <span>0</span>
-                <span>25</span>
-                <span>50</span>
-                <span>75</span>
-                <span>100</span>
-              </div>
-            </div>
-          </div>
+  <!-- Score Breakdown -->
+  <div class="content-block">
+    <p class="label">Score Breakdown</p>
+    <div class="breakdown-row" *ngFor="let item of scoreBreakdownItems">
+      <span>{{ item.label }}</span>
+      <span>{{ item.score }}/{{ item.max }}</span>
+    </div>
+  </div>
 
-          <div class="content-block">
-            <p class="label">Score Breakdown</p>
-            <div class="breakdown-row" *ngFor="let item of scoreBreakdownItems">
-              <span>{{ item.label }}</span>
-              <span>{{ item.score }}/{{ item.max }}</span>
-            </div>
-          </div>
-        </div>
+  <!-- Errors — show only if present -->
+  <div class="content-block" *ngIf="result.confidence_report.errors_during_analysis?.length">
+    <p class="label">Errors During Analysis</p>
+    <ul class="plain-list">
+      <li *ngFor="let error of result.confidence_report.errors_during_analysis">{{ error }}</li>
+    </ul>
+  </div>
+</div>
 
       </ng-container>
     </div>

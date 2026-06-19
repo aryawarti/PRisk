@@ -52,8 +52,14 @@ export interface AnalysisResult {
     recommendation: string;
     recommendation_color: 'green' | 'amber' | 'red';
     executive_summary: string;
-    top_reasons: string[];
-    merge_guidance: string[];
+    errors_during_analysis: string[]; // ✅ add
+    input_levels: {
+      // ✅ add
+      blast_radius_level: string;
+      engineering_severity: string;
+      testing_assessment: string;
+      complexity: string;
+    };
     breakdown: {
       blast_radius_score: number;
       blast_radius_max: number;
