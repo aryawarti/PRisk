@@ -18,7 +18,6 @@
 
     <div class="section-panel" *ngIf="isExpanded(section.key)">
       <ng-container [ngSwitch]="section.key">
-
         <!-- ======= CHANGE ======= -->
         <div *ngSwitchCase="'change'" class="panel-grid">
           <div class="content-block">
@@ -169,7 +168,10 @@
           <div class="content-block" *ngIf="result.testing_strategy.recommended_test_types?.length">
             <p class="label">Recommended Test Types</p>
             <div class="token-row">
-              <span class="token" *ngFor="let type of result.testing_strategy.recommended_test_types">
+              <span
+                class="token"
+                *ngFor="let type of result.testing_strategy.recommended_test_types"
+              >
                 {{ type }}
               </span>
             </div>
@@ -211,54 +213,58 @@
         </div>
 
         <!-- ======= CONFIDENCE ======= -->
-      <!-- ======= CONFIDENCE ======= -->
-<!-- ======= CONFIDENCE ======= -->
-<div *ngSwitchCase="'confidence'" class="panel-grid">
+        <!-- ======= CONFIDENCE ======= -->
+        <!-- ======= CONFIDENCE ======= -->
+        <div *ngSwitchCase="'confidence'" class="panel-grid">
+          <!-- Hero Score Block -->
+          <div
+            class="confidence-hero"
+            [attr.data-tone]="result.confidence_report.recommendation_color"
+          >
+            <div class="confidence-hero-score">
+              <span class="confidence-value">{{ result.confidence_report.score }}</span>
+              <span class="confidence-unit">%</span>
+            </div>
+            <div class="confidence-hero-right">
+              <span class="badge" [attr.data-tone]="result.confidence_report.recommendation_color">
+                {{ result.confidence_report.recommendation }}
+              </span>
+              <p class="confidence-executive">{{ result.confidence_report.executive_summary }}</p>
+            </div>
+          </div>
 
-  <!-- Hero Score Block -->
-  <div class="confidence-hero" [attr.data-tone]="result.confidence_report.recommendation_color">
-    <div class="confidence-hero-score">
-      <span class="confidence-value">{{ result.confidence_report.score }}</span>
-      <span class="confidence-unit">%</span>
-    </div>
-    <div class="confidence-hero-right">
-      <span class="badge" [attr.data-tone]="result.confidence_report.recommendation_color">
-        {{ result.confidence_report.recommendation }}
-      </span>
-      <p class="confidence-executive">{{ result.confidence_report.executive_summary }}</p>
-    </div>
-  </div>
+          <!-- Score Breakdown Cards with Progress Bars -->
+          <div class="breakdown-card-grid">
+            <div class="breakdown-card" *ngFor="let item of scoreBreakdownItems">
+              <div class="breakdown-card-top">
+                <p class="breakdown-card-label">{{ item.label }}</p>
+                <span class="breakdown-card-score"
+                  >{{ item.score }}<span class="breakdown-card-max">/{{ item.max }}</span></span
+                >
+              </div>
+              <div class="progress-track">
+                <div
+                  class="progress-fill"
+                  [style.width.%]="(item.score / item.max) * 100"
+                  [attr.data-tone]="getProgressTone(item.score, item.max)"
+                ></div>
+              </div>
+              <span class="badge" [attr.data-tone]="getInputLevelTone(item.label)">
+                {{ getInputLevel(item.label) }}
+              </span>
+            </div>
+          </div>
 
-  <!-- Score Breakdown Cards with Progress Bars -->
-  <div class="breakdown-card-grid">
-    <div class="breakdown-card" *ngFor="let item of scoreBreakdownItems">
-      <div class="breakdown-card-top">
-        <p class="breakdown-card-label">{{ item.label }}</p>
-        <span class="breakdown-card-score">{{ item.score }}<span class="breakdown-card-max">/{{ item.max }}</span></span>
-      </div>
-      <div class="progress-track">
-        <div
-          class="progress-fill"
-          [style.width.%]="(item.score / item.max) * 100"
-          [attr.data-tone]="getProgressTone(item.score, item.max)"
-        ></div>
-      </div>
-      <span class="badge" [attr.data-tone]="getInputLevelTone(item.label)">
-        {{ getInputLevel(item.label) }}
-      </span>
-    </div>
-  </div>
-
-  <!-- Errors During Analysis — only if present -->
-  <div class="content-block" *ngIf="result.confidence_report.errors_during_analysis.length">
-    <p class="label">Errors During Analysis</p>
-    <ul class="plain-list">
-      <li *ngFor="let error of result.confidence_report.errors_during_analysis">{{ error }}</li>
-    </ul>
-  </div>
-
-</div>
-
+          <!-- Errors During Analysis — only if present -->
+          <div class="content-block" *ngIf="result.confidence_report.errors_during_analysis.length">
+            <p class="label">Errors During Analysis</p>
+            <ul class="plain-list">
+              <li *ngFor="let error of result.confidence_report.errors_during_analysis">
+                {{ error }}
+              </li>
+            </ul>
+          </div>
+        </div>
       </ng-container>
     </div>
   </section>
