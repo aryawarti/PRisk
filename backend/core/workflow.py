@@ -71,6 +71,7 @@ def build_prisk_graph() -> StateGraph:
 prisk_graph = build_prisk_graph()
 
 
+
 def run_analysis(initial_state: PRiskState) -> PRiskState:
     """
     Convenience function called by the FastAPI route.

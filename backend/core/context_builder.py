@@ -84,13 +84,13 @@ def fetch_pr_data(owner: str, repo: str, pr_number: int) -> dict:
     for file in pull.get_files():
         changed_files.append(file.filename)
         if file.patch:                      # some files (binary) have no patch
-            diff_lines.append(f"--- a/{file.filename}")
+            diff_lines.append(f"--- a/{file.filename}") 
             diff_lines.append(f"+++ b/{file.filename}")
             diff_lines.append(file.patch)
             diff_lines.append("")           # blank separator between files
 
     author = pull.user.login if pull.user else ""
-
+ 
     return {
         "title": pull.title,
         "description": pull.body or "",
