@@ -169,7 +169,6 @@
 }
 
 .error-panel,
-.loading-panel,
 .empty-panel {
   margin-top: 18px;
   padding: 18px;
@@ -193,54 +192,36 @@
   line-height: 1.55;
 }
 
-.loading-steps {
-  display: grid;
-  gap: 12px;
-}
-
-.loading-step {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
-  padding: 12px;
-  border: 1px solid #e0e8ed;
-  border-radius: 8px;
-  background: #fafcfd;
-}
-
-.loading-step.active {
-  border-color: #9fbabf;
-  background: #f1f7f8;
-}
-
-.step-index {
-  display: inline-flex;
+.loading-panel {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  gap: 14px;
+  padding: 36px 18px;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #d8e7ea;
+  border-top-color: #2f5a63;
   border-radius: 50%;
-  background: #d8e7ea;
-  color: #22474d;
-  font-size: 12px;
-  font-weight: 700;
+  animation: spin 0.8s linear infinite;
 }
 
-.step-title,
-.step-copy {
+.loading-text {
   margin: 0;
-}
-
-.step-title {
   font-size: 14px;
   font-weight: 600;
+  color: #52606d;
 }
 
-.step-copy {
-  margin-top: 3px;
-  font-size: 13px;
-  color: #5e6a75;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .results-panel {

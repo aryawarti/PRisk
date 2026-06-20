@@ -46,48 +46,14 @@
       </div>
 
       <div class="loading-panel" *ngIf="state === 'loading'">
-        <div class="loading-steps">
-          <div class="loading-step" [class.active]="loadingStep >= 0">
-            <span class="step-index">1</span>
-            <div>
-              <p class="step-title">Fetching pull request metadata</p>
-              <p class="step-copy">GitHub URL, files, and patch data</p>
-            </div>
-          </div>
-
-          <div class="loading-step" [class.active]="loadingStep >= 1">
-            <span class="step-index">2</span>
-            <div>
-              <p class="step-title">Building repository context</p>
-              <p class="step-copy">Structure summary and dependency signals</p>
-            </div>
-          </div>
-
-          <div class="loading-step" [class.active]="loadingStep >= 2">
-            <span class="step-index">3</span>
-            <div>
-              <p class="step-title">Running agent analysis</p>
-              <p class="step-copy">Change, blast radius, engineering, and tests</p>
-            </div>
-          </div>
-
-          <div class="loading-step" [class.active]="loadingStep >= 3">
-            <span class="step-index">4</span>
-            <div>
-              <p class="step-title">Scoring merge confidence</p>
-              <p class="step-copy">Executive recommendation and guidance</p>
-            </div>
-          </div>
-        </div>
+        <div class="spinner"></div>
+        <p class="loading-text">Analysing pull request…</p>
       </div>
     </div>
 
     <div class="results-panel" *ngIf="result; else emptyState">
      <div class="results-header" [attr.data-tone]="result.confidence_report.recommendation_color">
 
-  <!-- <div class="results-header-top">
-    <span class="results-repo-label">{{ result.repo_name }}</span>
-  </div> -->
 
   <div class="results-header-body">
     <div class="results-info-grid">
@@ -110,7 +76,7 @@
 
     </div>
 
-    <!-- ✅ Score moved to right side of body -->
+
     <div class="results-score" [attr.data-tone]="result.confidence_report.recommendation_color">
       <span class="score-value">{{ result.confidence_report.score }}</span>
       <span class="score-meta">{{ result.confidence_report.recommendation }}</span>
