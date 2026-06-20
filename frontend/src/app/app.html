@@ -52,40 +52,40 @@
     </div>
 
     <div class="results-panel" *ngIf="result; else emptyState">
-     <div class="results-header" [attr.data-tone]="result.confidence_report.recommendation_color">
-
-
-  <div class="results-header-body">
-    <div class="results-info-grid">
-      <div class="results-info-cell">
-        <span class="info-label">Author</span>
-        <span class="info-value">{{ result.author }}</span>
-      </div>
+      <div class="results-header" [attr.data-tone]="result.confidence_report.recommendation_color">
+        <div class="results-header-body">
+          <div class="results-info-grid">
             <div class="results-info-cell">
-        <span class="info-label">PR URL</span>
-        <a class="info-value info-link" [href]="result.pr_url" target="_blank">View on GitHub →</a>
+              <span class="info-label">Author</span>
+              <span class="info-value">{{ result.author }}</span>
+            </div>
+            <div class="results-info-cell">
+              <span class="info-label">PR URL</span>
+              <a class="info-value info-link" [href]="result.pr_url" target="_blank"
+                >View on GitHub →</a
+              >
+            </div>
+            <div class="results-info-cell">
+              <span class="info-label">PR Title</span>
+              <span class="info-value">{{ result.name || result.pr_title }}</span>
+            </div>
+            <div class="results-info-cell">
+              <span class="info-label">Repository</span>
+              <span class="info-value">{{ result.repo_name }}</span>
+            </div>
+          </div>
+
+          <div
+            class="results-score"
+            [attr.data-tone]="result.confidence_report.recommendation_color"
+          >
+            <span class="score-value">{{ result.confidence_report.score }}</span>
+            <span class="score-meta">{{ result.confidence_report.recommendation }}</span>
+          </div>
+        </div>
       </div>
-      <div class="results-info-cell">
-        <span class="info-label">PR Title</span>
-        <span class="info-value">{{ result.name || result.pr_title }}</span>
-      </div>
-      <div class="results-info-cell">
-        <span class="info-label">Repository</span>
-        <span class="info-value">{{ result.repo_name }}</span>
-      </div>
 
-    </div>
-
-
-    <div class="results-score" [attr.data-tone]="result.confidence_report.recommendation_color">
-      <span class="score-value">{{ result.confidence_report.score }}</span>
-      <span class="score-meta">{{ result.confidence_report.recommendation }}</span>
-    </div>
-  </div>
-
-</div>
-
-<app-dashboard [result]="result"></app-dashboard>
+      <app-dashboard [result]="result"></app-dashboard>
     </div>
 
     <ng-template #emptyState>

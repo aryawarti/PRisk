@@ -11,7 +11,7 @@ WHAT IT DOES:
 
 WHY IT'S UNIQUE:
   Most code review tools look at what changed.
-  DiffVision looks at what DEPENDS on what changed.
+  PRisk looks at what DEPENDS on what changed.
 
   Example: UserService.getUser() changes → who calls this?
     → UserController, OrderService, NotificationService all call it.

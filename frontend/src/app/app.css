@@ -360,7 +360,6 @@
 .results-header-body {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 24px;
   padding: 18px 20px;
 }
@@ -368,7 +367,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 14px 32px;
-  flex: 1; /* ✅ takes all remaining space, pushes score to far right */
+  flex: 1;          /* takes all available space */
 }
 
 .results-info-cell {
@@ -415,8 +414,7 @@
   border: 1px solid #dbe5eb;
   background: #f8fbfc;
   flex-shrink: 0;
-  min-width: 120px;
-  margin-left: auto;
+  width: 200px;
 }
 
 .results-score[data-tone='green'] { border-color: #a7cdc0; background: #eff8f4; }
@@ -428,7 +426,10 @@
   font-weight: 800;
   line-height: 1;
   color: #14202b;
+  width: 100%;
+  text-align: right;
 }
+
 
 .results-score[data-tone='green'] .score-value { color: #215a4f; }
 .results-score[data-tone='amber'] .score-value { color: #8e6200; }

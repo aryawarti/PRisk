@@ -18,7 +18,6 @@ INPUT (from state):
 OUTPUT (written back to state):
   - state["change_analysis"] : dict with summary, type, module, complexity
 """
-
 import json
 from core.state import PRiskState
 from core.fallbacks import infer_change_analysis, parse_json_response
@@ -36,7 +35,7 @@ def change_understanding_agent(state: PRiskState) -> PRiskState:
 
     LangGraph calls this function automatically when it's the node's turn.
     The return value is MERGED into the existing state (not replaced).
-    So you only need to return the key you're changing.
+    So we only need to return the key we're changing.
     """
     local_errors: list[str] = []
 

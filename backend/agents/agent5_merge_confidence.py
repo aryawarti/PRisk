@@ -122,6 +122,8 @@ def calculate_confidence_score(
         recommendation = "Do Not Merge"
         recommendation_color = "red"
 
+
+
     return {
         "score": total,
         "recommendation": recommendation,
