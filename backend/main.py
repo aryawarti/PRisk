@@ -40,7 +40,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:4200",     # Angular dev server
-        "https://prisk-frontend.vercel.app",    # In case you use a different port
+        "https://p-risk.vercel.app/",    # In case you use a different port
     ],
     allow_credentials=True,
     allow_methods=["*"],
