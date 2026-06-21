@@ -27,7 +27,6 @@ from core.context_builder import build_repository_context
 from core.workflow import run_analysis
 
 
-# ── App setup ────────────────────────────────────────────────────────────────
 
 app = FastAPI(
     title="PRisk API",
