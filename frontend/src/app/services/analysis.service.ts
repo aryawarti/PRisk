@@ -78,7 +78,7 @@ export interface AnalysisResult {
 @Injectable({ providedIn: 'root' })
 export class AnalysisService {
   // ← Make sure this matches your FastAPI port (8000)
-  private readonly apiUrl = '${API_BASE_URL}/analyse-pr';
+  private readonly apiUrl = `${API_BASE_URL}/analyse-pr`;
 
   constructor(private http: HttpClient) {}
 
