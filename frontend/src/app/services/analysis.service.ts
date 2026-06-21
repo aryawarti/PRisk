@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import { API_BASE_URL } from '../api-config';
 
 export interface AnalysisResult {
   success: boolean;
@@ -77,7 +78,7 @@ export interface AnalysisResult {
 @Injectable({ providedIn: 'root' })
 export class AnalysisService {
   // ← Make sure this matches your FastAPI port (8000)
-  private readonly apiUrl = 'http://localhost:8000/api/analyse';
+  private readonly apiUrl = '${API_BASE_URL}/analyse-pr';
 
   constructor(private http: HttpClient) {}
 
