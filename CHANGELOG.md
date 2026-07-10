@@ -1,4 +1,12 @@
-# PRisk — Panel Interiors (v1.4.3)
+# PRisk — Honest Failures (v1.4.4)
+
+- **No more silent fallback (strict mode).** If the AI provider fails (rate limit, bad key, dead model), agents 1–4 now abort the whole analysis with a 503 and a plain-language reason ("rate limit reached — try again in about a minute") instead of presenting heuristic guesses as results. The UI states explicitly: *"Nothing was scored or guessed."* Heuristic report generation is gone; a report you see is always a real AI analysis. (Agent 5's prose fallback remains — it never affects the score.)
+- **Clear URL errors.** Invalid links are caught client-side before any request: the input gets a red ring, and a structured error card shows a title, explanation, and the expected format as a code chip. Nonexistent PRs return "Pull request not found: owner/repo #N — check the repository name and PR number" instead of GitHub's bare "Not Found".
+- **Full path on hover.** Truncated file paths in risk pins and history evidence show the complete path in a tooltip.
+
+---
+
+# Panel Interiors (v1.4.3)
 
 - Every expanded section rebuilt from "stacked labeled boxes" into a scannable layout: a **stat strip** on top (segmented metrics with dividers — change type/lines/complexity/files; impact/downstream/modules/flows; severity/issues/clear-categories; coverage/count/test types), a **lede** summary line with brand accent instead of a boxed paragraph, and **two-column grids** for related detail blocks.
 - **Dependency chains are now visual**: `configServer → serviceRegistry → hospitalService` renders as monospace node chips connected by arrows instead of ASCII text in bullets.

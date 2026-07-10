@@ -23,8 +23,7 @@ OUTPUT (written back to state):
 
 import json
 from core.state import PRiskState
-from core.fallbacks import infer_engineering_review
-from core.llm import invoke_llm_json
+from core.llm import AnalysisUnavailable, LLMUnavailable, invoke_llm_json
 
 
 MAX_DIFF_CHARS = 5000    # Give this agent a bit more context since it's reading code
@@ -85,13 +84,13 @@ Return ONLY valid JSON:
 
 Do NOT include markdown code fences or any text outside the JSON object."""
 
+    # STRICT MODE: abort with a clear reason instead of guessing.
     try:
         engineering_review = invoke_llm_json(
             prompt,
             required_keys=("security", "performance", "maintainability", "code_quality", "overall_severity"),
         )
-    except Exception as e:
-        engineering_review = infer_engineering_review(state["diff"], state["changed_files"])
-        local_errors.append(f"Agent 3 used heuristic fallback: {e}")
+    except LLMUnavailable as e:
+        raise AnalysisUnavailable(str(e)) from e
 
     return {"engineering_review": engineering_review, "errors": local_errors}

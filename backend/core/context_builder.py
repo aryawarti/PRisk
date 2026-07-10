@@ -90,7 +90,13 @@ def fetch_pr_data(owner: str, repo: str, pr_number: int) -> dict:
     except GithubException as e:
         error_data = getattr(e, "data", {})
         message = error_data.get("message", str(e)) if isinstance(error_data, dict) else str(e)
-        if not token and e.status == 403:
+        if e.status == 404:
+            message = (
+                f"Pull request not found: {owner}/{repo} #{pr_number}. "
+                "Check that the repository name and PR number are correct, "
+                "and that the repository is accessible."
+            )
+        elif not token and e.status == 403:
             message = (
                 "GitHub rate limit reached for unauthenticated requests. "
                 "Set GITHUB_TOKEN in backend/.env and try again."

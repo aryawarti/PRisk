@@ -25,8 +25,7 @@ OUTPUT (written back to state):
 
 import json
 from core.state import PRiskState
-from core.fallbacks import infer_testing_strategy
-from core.llm import invoke_llm_json
+from core.llm import AnalysisUnavailable, LLMUnavailable, invoke_llm_json
 
 
 def testing_strategy_agent(state: PRiskState) -> PRiskState:
@@ -92,18 +91,13 @@ Return ONLY valid JSON:
 
 Do NOT include markdown code fences or any text outside the JSON object."""
 
+    # STRICT MODE: abort with a clear reason instead of guessing.
     try:
         testing_strategy = invoke_llm_json(
             prompt,
             required_keys=("missing_tests", "test_coverage_assessment"),
         )
-    except Exception as e:
-        testing_strategy = infer_testing_strategy(
-            state["changed_files"],
-            change_analysis,
-            blast_radius,
-            engineering_review,
-        )
-        local_errors.append(f"Agent 4 used heuristic fallback: {e}")
+    except LLMUnavailable as e:
+        raise AnalysisUnavailable(str(e)) from e
 
     return {"testing_strategy": testing_strategy, "errors": local_errors}

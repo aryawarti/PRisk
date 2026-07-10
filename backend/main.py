@@ -36,6 +36,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from core.context_builder import build_repository_context, scrub_secrets
+from core.llm import AnalysisUnavailable, describe_llm_failure
 from core.normalize import (
     normalize_blast_radius,
     normalize_change_analysis,
@@ -123,22 +124,19 @@ def build_analysis_quality(errors: list) -> dict:
     # Agent 5's summary fallback doesn't affect the score, only prose.
     scoring_agents_degraded = [i for i in degraded_ids if i != 5]
 
-    if not degraded_ids and not clone_failed:
+    # Agents 1-4 abort the whole analysis on AI failure (strict mode), so a
+    # produced report always has real AI analysis. Only two soft cases remain:
+    # agent 5's summary prose fallback (score unaffected) and clone failure.
+    if not scoring_agents_degraded and not clone_failed:
         mode = "full"
-        note = "All five agents completed AI analysis with repository evidence."
-    elif len(scoring_agents_degraded) >= 3:
-        mode = "degraded"
         note = (
-            "AI analysis was unavailable — this report was produced by deterministic "
-            "heuristics and git evidence only. Judgment-based sections are approximate; "
-            "check the configured LLM provider and API key."
+            "Score computed deterministically; the executive summary used a deterministic fallback."
+            if 5 in degraded_ids
+            else "All five agents completed AI analysis with repository evidence."
         )
     else:
         mode = "partial"
-        names = ", ".join(_AGENT_NAMES[i] for i in degraded_ids)
-        note = f"Some agents fell back to deterministic heuristics ({names}). The score still reflects measured evidence."
-        if clone_failed and not degraded_ids:
-            note = "Repository clone failed — history evidence unavailable; analysis used GitHub metadata only."
+        note = "Repository clone failed — history evidence unavailable; analysis used GitHub metadata only."
 
     return {
         "mode": mode,
@@ -205,6 +203,16 @@ def analyse_pr(request: AnalyseRequest):
         # Invalid URL format
         raise HTTPException(status_code=400, detail=scrub_secrets(str(e)))
 
+    except AnalysisUnavailable as e:
+        # AI provider failed — abort honestly rather than show heuristic guesses.
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"AI analysis unavailable: {describe_llm_failure(str(e))}. "
+                "No report was generated — PRisk never shows guessed results."
+            ),
+        )
+
     except RuntimeError as e:
         # GitHub API error (bad token, repo not found, rate limit, etc.)
         raise HTTPException(status_code=422, detail=scrub_secrets(str(e)))
@@ -252,6 +260,15 @@ def analyse_pr_stream(request: AnalyseRequest):
             events.put({"type": "result", "payload": build_response_payload(final_state)})
         except ValueError as e:
             events.put({"type": "error", "status": 400, "message": scrub_secrets(str(e))})
+        except AnalysisUnavailable as e:
+            events.put({
+                "type": "error",
+                "status": 503,
+                "message": (
+                    f"AI analysis unavailable: {describe_llm_failure(str(e))}. "
+                    "No report was generated — PRisk never shows guessed results."
+                ),
+            })
         except RuntimeError as e:
             events.put({"type": "error", "status": 422, "message": scrub_secrets(str(e))})
         except Exception:

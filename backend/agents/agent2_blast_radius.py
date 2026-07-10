@@ -29,11 +29,8 @@ OUTPUT (written back to state):
 
 import json
 from core.state import PRiskState
-from core.fallbacks import (
-    infer_blast_radius,
-    infer_change_analysis,
-)
-from core.llm import invoke_llm_json
+from core.fallbacks import infer_change_analysis
+from core.llm import AnalysisUnavailable, LLMUnavailable, invoke_llm_json
 
 
 MAX_DIFF_CHARS = 4000
@@ -106,18 +103,13 @@ Return ONLY valid JSON with these exact keys:
 
 Do NOT include markdown code fences or any text outside the JSON object."""
 
+    # STRICT MODE: abort with a clear reason instead of guessing.
     try:
         blast_radius = invoke_llm_json(
             prompt,
             required_keys=("affected_modules", "impact_level", "reasoning"),
         )
-    except Exception as e:
-        blast_radius = infer_blast_radius(
-            state["changed_files"],
-            state["diff"],
-            state["repo_summary"],
-            change_analysis,
-        )
-        local_errors.append(f"Agent 2 used heuristic fallback: {e}")
+    except LLMUnavailable as e:
+        raise AnalysisUnavailable(str(e)) from e
 
     return {"blast_radius": blast_radius, "errors": local_errors}

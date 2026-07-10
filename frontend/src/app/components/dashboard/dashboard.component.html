@@ -168,7 +168,7 @@
             <ul class="file-list">
               <li class="file-row" *ngFor="let file of fileRisks" [attr.data-risk]="file.risk">
                 <span class="file-pin" aria-hidden="true"></span>
-                <code class="file-path">{{ file.path }}</code>
+                <code class="file-path" [attr.title]="file.path">{{ file.path }}</code>
                 <span class="file-tag" *ngIf="file.risk === 'epicenter'">Epicenter</span>
                 <span class="file-tag file-tag-hotspot" *ngIf="file.risk === 'hotspot'">Hotspot</span>
               </li>
@@ -186,7 +186,7 @@
             </p>
             <ul class="history-evidence">
               <li class="evidence-row" *ngFor="let file of historyFiles" [attr.data-hot]="isHotspot(file.path)">
-                <code class="file-path">{{ file.path }}</code>
+                <code class="file-path" [attr.title]="file.path">{{ file.path }}</code>
                 <span class="evidence-stats">
                   <span class="evidence-stat" [class.evidence-alert]="file.fix_commits > 0">
                     {{ file.fix_commits }} fix{{ file.fix_commits === 1 ? '' : 'es' }}/revert{{ file.fix_commits === 1 ? '' : 's' }}

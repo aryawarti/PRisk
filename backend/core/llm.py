@@ -24,6 +24,28 @@ class LLMUnavailable(Exception):
     """Raised when the LLM could not produce a valid response after retries."""
 
 
+class AnalysisUnavailable(RuntimeError):
+    """
+    Raised when AI analysis cannot run (rate limit, bad key, dead model).
+    PRisk aborts the whole analysis instead of showing heuristic guesses —
+    a fabricated-looking report is worse than an honest error.
+    """
+
+
+def describe_llm_failure(message: str) -> str:
+    """Turn a raw provider error into a plain-language reason for users."""
+    lowered = message.lower()
+    if "429" in lowered or "rate limit" in lowered or "rate_limit" in lowered:
+        return "the AI provider's rate limit was reached — please try again in about a minute"
+    if "401" in lowered or "invalid api key" in lowered or "invalid_api_key" in lowered or "missing required environment" in lowered:
+        return "the AI API key is missing or invalid on the server"
+    if "decommission" in lowered or "deprecated" in lowered or ("model" in lowered and ("not found" in lowered or "does not exist" in lowered)):
+        return "the configured AI model is no longer available — the server's GROQ_MODEL setting needs updating"
+    if "timeout" in lowered or "timed out" in lowered:
+        return "the AI provider timed out — please try again"
+    return "the AI provider did not return a valid response — please try again"
+
+
 def _require_env(var_name: str) -> str:
     value = os.getenv(var_name)
     if not value:

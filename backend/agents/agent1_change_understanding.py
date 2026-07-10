@@ -20,8 +20,7 @@ OUTPUT (written back to state):
 """
 import json
 from core.state import PRiskState
-from core.fallbacks import infer_change_analysis
-from core.llm import invoke_llm_json
+from core.llm import AnalysisUnavailable, LLMUnavailable, invoke_llm_json
 
 
 # Limit diff length sent to LLM to avoid token overflows.
@@ -71,17 +70,14 @@ Return ONLY valid JSON with these exact keys:
 
 Do NOT include markdown code fences or any text outside the JSON object."""
 
+    # STRICT MODE: no heuristic fallback. If the AI can't run, the analysis
+    # aborts with a clear reason — PRisk never presents guesses as results.
     try:
         change_analysis = invoke_llm_json(
             prompt,
             required_keys=("summary", "change_type", "complexity"),
         )
-    except Exception as e:
-        change_analysis = infer_change_analysis(
-            state["changed_files"],
-            state["diff"],
-            state["repo_summary"],
-        )
-        local_errors.append(f"Agent 1 used heuristic fallback: {e}")
+    except LLMUnavailable as e:
+        raise AnalysisUnavailable(str(e)) from e
 
     return {"change_analysis": change_analysis, "errors": local_errors}

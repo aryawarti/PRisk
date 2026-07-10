@@ -34,6 +34,7 @@
             [(ngModel)]="prUrl"
             placeholder="https://github.com/owner/repo/pull/42"
             [disabled]="state() === 'loading'"
+            [class.input-invalid]="state() === 'error' && errorKind() === 'url'"
             (keydown.enter)="analyse()"
           />
         </div>
@@ -73,9 +74,25 @@
           </ol>
         </div>
 
-        <div class="error-panel" *ngIf="state() === 'error'">
-          <p class="panel-title">Analysis failed</p>
+        <div class="error-panel" *ngIf="state() === 'error'" [attr.data-kind]="errorKind()">
+          <div class="error-head">
+            <span class="error-icon" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" />
+                <path d="M8 4.5v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                <circle cx="8" cy="11.2" r="0.9" fill="currentColor" />
+              </svg>
+            </span>
+            <p class="panel-title">{{ errorTitle }}</p>
+          </div>
           <p class="panel-copy">{{ errorMessage() }}</p>
+          <div class="error-hint" *ngIf="errorKind() === 'url'">
+            <span class="error-hint-label">Expected format</span>
+            <code class="error-example">https://github.com/owner/repo/pull/42</code>
+          </div>
+          <p class="panel-copy error-subtle" *ngIf="errorKind() === 'llm'">
+            Nothing was scored or guessed. Your PR link is fine — try again shortly.
+          </p>
         </div>
       </div>
 

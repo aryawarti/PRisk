@@ -39,6 +39,9 @@ export class AppComponent {
   readonly copied = signal(false);
   /** When viewing a saved snapshot from history: its capture timestamp. */
   readonly snapshotTime = signal<number | null>(null);
+  readonly errorKind = signal<'url' | 'notfound' | 'llm' | 'generic'>('generic');
+
+  private static readonly PR_URL_PATTERN = /github\.com\/[^\/\s]+\/[^\/\s]+\/pull\/\d+/i;
 
   private abortController: AbortController | null = null;
   private copiedTimer: ReturnType<typeof setTimeout> | null = null;
@@ -51,6 +54,18 @@ export class AppComponent {
   async analyse(): Promise<void> {
     const url = this.prUrl.trim();
     if (!url || this.state() === 'loading') return;
+
+    // Validate the link shape before spending anything on a request.
+    if (!AppComponent.PR_URL_PATTERN.test(url)) {
+      this.result.set(null);
+      this.snapshotTime.set(null);
+      this.errorKind.set('url');
+      this.errorMessage.set(
+        'That link doesn’t point to a GitHub pull request. It needs the owner, repository, and PR number.',
+      );
+      this.state.set('error');
+      return;
+    }
 
     this.state.set('loading');
     this.result.set(null);
@@ -152,7 +167,29 @@ export class AppComponent {
 
   private fail(message: string): void {
     this.errorMessage.set(message);
+    this.errorKind.set(this.classifyError(message));
     this.state.set('error');
+  }
+
+  private classifyError(message: string): 'url' | 'notfound' | 'llm' | 'generic' {
+    const lowered = message.toLowerCase();
+    if (lowered.includes('invalid github pr url')) return 'url';
+    if (lowered.includes('not found')) return 'notfound';
+    if (lowered.includes('ai analysis unavailable')) return 'llm';
+    return 'generic';
+  }
+
+  get errorTitle(): string {
+    switch (this.errorKind()) {
+      case 'url':
+        return 'That doesn’t look like a PR link';
+      case 'notfound':
+        return 'Pull request not found';
+      case 'llm':
+        return 'AI unavailable — no report generated';
+      default:
+        return 'Analysis failed';
+    }
   }
 
   reset(): void {
