@@ -21,6 +21,8 @@ HOW LANGGRAPH PARALLELISM WORKS:
   Agent 5 depends on agent 4 → runs last.
 """
 
+from typing import Callable, Optional
+
 from langgraph.graph import StateGraph, END
 
 from core.state import PRiskState
@@ -82,3 +84,48 @@ def run_analysis(initial_state: PRiskState) -> PRiskState:
     """
     final_state = prisk_graph.invoke(initial_state)
     return final_state
+
+
+# Human-readable completion labels for each node, used by the streaming API.
+NODE_COMPLETION_LABELS: dict[str, str] = {
+    "change_node": "Change understanding complete",
+    "blast_node": "Blast radius mapped",
+    "engineering_node": "Engineering review complete",
+    "testing_node": "Testing strategy drafted",
+    "confidence_node": "Merge confidence scored",
+}
+
+
+def stream_analysis(
+    initial_state: PRiskState,
+    emit: Optional[Callable[[str, str], None]] = None,
+) -> PRiskState:
+    """
+    Same pipeline as run_analysis, but surfaces node-by-node progress.
+
+    LangGraph's .stream(..., stream_mode="updates") yields one dict per
+    completed node: {node_name: partial_state_update}. We merge those
+    updates into a running copy of the state and emit a status event for
+    each finished node, so the frontend can show live progress while
+    agents 1-3 run in parallel.
+    """
+    if emit is None:
+        return run_analysis(initial_state)
+
+    final_state: dict = dict(initial_state)
+
+    for update in prisk_graph.stream(initial_state, stream_mode="updates"):
+        if not isinstance(update, dict):
+            continue
+        for node_name, node_output in update.items():
+            if not isinstance(node_output, dict):
+                continue
+            for key, value in node_output.items():
+                if key == "errors":
+                    final_state["errors"] = list(final_state.get("errors", [])) + list(value or [])
+                else:
+                    final_state[key] = value
+            if node_name in NODE_COMPLETION_LABELS:
+                emit(node_name, NODE_COMPLETION_LABELS[node_name])
+
+    return final_state  # type: ignore[return-value]

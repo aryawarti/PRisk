@@ -1,3 +1,59 @@
+/* ─────────────────────────────────────────────────────────────
+   PRisk Design System — global tokens & base styles
+   Identity: calm teal intelligence-console. Light, precise, quiet.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Ink */
+  --ink-900: #0d1b24;
+  --ink-700: #24343f;
+  --ink-500: #4d5f6b;
+  --ink-400: #6d7f8b;
+  --ink-300: #93a4af;
+
+  /* Brand teal */
+  --brand-900: #1d3a40;
+  --brand-700: #2f5a63;
+  --brand-600: #386b75;
+  --brand-500: #3d6b70;
+  --brand-100: #dcebe9;
+  --brand-050: #eef5f4;
+
+  /* Surfaces */
+  --bg: #f2f5f7;
+  --surface: #ffffff;
+  --surface-2: #f8fbfc;
+  --border: #e1e9ee;
+  --border-strong: #cfdce2;
+
+  /* Semantic tones */
+  --green-700: #1e5c4d;
+  --green-500: #3f9478;
+  --green-100: #e2f3ec;
+  --green-border: #a8d4c4;
+
+  --amber-700: #8a5f00;
+  --amber-500: #d9a323;
+  --amber-100: #fdf3dc;
+  --amber-border: #e8cf8e;
+
+  --red-700: #8d3530;
+  --red-500: #cf6660;
+  --red-100: #fdefee;
+  --red-border: #e3b1ad;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(13, 27, 36, 0.05);
+  --shadow-2: 0 1px 2px rgba(13, 27, 36, 0.05), 0 6px 20px rgba(13, 27, 36, 0.06);
+  --shadow-3: 0 2px 4px rgba(13, 27, 36, 0.06), 0 14px 36px rgba(13, 27, 36, 0.1);
+
+  /* Shape & motion */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 html,
 body {
   margin: 0;
@@ -8,8 +64,10 @@ body {
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  background: #f3f6f8;
-  color: #14202b;
+  background: var(--bg);
+  color: var(--ink-900);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 * {
@@ -19,4 +77,33 @@ body {
 button,
 input {
   font: inherit;
+}
+
+::selection {
+  background: var(--brand-100);
+  color: var(--brand-900);
+}
+
+/* Quiet, consistent scrollbars (WebKit) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

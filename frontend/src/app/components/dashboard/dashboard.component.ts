@@ -19,6 +19,12 @@ interface ReviewCategoryView {
   summary: string;
 }
 
+interface FileRiskView {
+  path: string;
+  /** 'epicenter' when the file matches a blast-radius module — the change's origin of risk. */
+  risk: 'epicenter' | 'standard';
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -29,12 +35,8 @@ interface ReviewCategoryView {
 export class DashboardComponent {
   @Input({ required: true }) result!: AnalysisResult;
 
-  // ✅ FIXED: Start with nothing expanded
+  // Start with nothing expanded
   expandedSection: DashboardSectionKey | null = null;
-
-  ngOnInit() {
-    console.log(this.result);
-  }
 
   get sections(): DashboardSection[] {
     return [
@@ -69,6 +71,35 @@ export class DashboardComponent {
         tone: this.result.confidence_report.recommendation_color,
       },
     ];
+  }
+
+  /**
+   * File-level risk pins: cross-references each changed file against the
+   * blast-radius modules. Files that match are the "epicenter" of the risk.
+   */
+  get fileRisks(): FileRiskView[] {
+    const files = this.result?.changed_files ?? [];
+    const moduleTokens = [
+      ...(this.result?.blast_radius?.affected_modules ?? []),
+      ...this.affectedModules,
+    ]
+      .map((token) => token.toLowerCase().replace(/[^a-z0-9]/g, ''))
+      .filter((token) => token.length >= 3);
+
+    return files.map((path) => {
+      const flattened = path.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const isEpicenter = moduleTokens.some((token) => flattened.includes(token));
+      return { path, risk: isEpicenter ? 'epicenter' : 'standard' };
+    });
+  }
+
+  /** affected_module may be a comma-separated string from the LLM; guard against missing values. */
+  get affectedModules(): string[] {
+    const raw = this.result?.change_analysis?.affected_module ?? '';
+    return raw
+      .split(',')
+      .map((module) => module.trim())
+      .filter(Boolean);
   }
 
   get engineeringCategories(): ReviewCategoryView[] {

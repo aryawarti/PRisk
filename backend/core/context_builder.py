@@ -21,7 +21,7 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 from urllib.parse import quote
 
 import git
@@ -33,6 +33,25 @@ from core.fallbacks import infer_repository_summary
 from core.state import PRiskState
 
 load_dotenv()
+
+# Optional callback used by the streaming endpoint: emit(stage, label)
+EmitFn = Callable[[str, str], None]
+
+# Matches token-in-URL patterns like https://x-access-token:ghp_xxx@github.com/...
+_AUTH_URL_RE = re.compile(r"(x-access-token:)[^@\s]+@")
+
+
+def scrub_secrets(text: str) -> str:
+    """
+    Remove credentials from any string that might reach logs or API clients.
+    GitPython errors, in particular, echo the full clone command including
+    the token-authenticated URL.
+    """
+    cleaned = _AUTH_URL_RE.sub(r"\1***@", text)
+    token = os.getenv("GITHUB_TOKEN")
+    if token:
+        cleaned = cleaned.replace(token, "***")
+    return cleaned
 
 
 # ── GitHub helpers ────────────────────────────────────────────────────────────
@@ -206,10 +225,13 @@ Keep it factual. Do not pad. Output ONLY the summary text, nothing else."""
 
 # ── Public entry point ────────────────────────────────────────────────────────
 
-def build_repository_context(pr_url: str) -> PRiskState:
+def build_repository_context(pr_url: str, emit: Optional[EmitFn] = None) -> PRiskState:
     """
     Main function called by the FastAPI endpoint.
     Returns a fully populated initial PRiskState ready for LangGraph.
+
+    `emit(stage, label)` is an optional callback used by the streaming
+    endpoint to surface real-time progress to the frontend.
 
     Steps:
       1. Parse URL
@@ -220,25 +242,35 @@ def build_repository_context(pr_url: str) -> PRiskState:
       6. Clean up temp clone
       7. Return initial state
     """
+    def notify(stage: str, label: str) -> None:
+        if emit:
+            emit(stage, label)
+
     errors: list[str] = []
     repo_path: Optional[Path] = None
 
     # Step 1: Parse URL
+    notify("parse", "Validating pull request link…")
     owner, repo_slug, pr_number = parse_pr_url(pr_url)
     repo_name = f"{owner}/{repo_slug}"
 
     # Step 2: Fetch PR data from GitHub
+    notify("fetch", f"Fetching PR #{pr_number} from {repo_name}…")
     pr_data = fetch_pr_data(owner, repo_slug, pr_number)
+    file_count = len(pr_data["changed_files"])
+    notify("diff", f"Reading diff — {file_count} changed file{'s' if file_count != 1 else ''}…")
 
     # Step 3 & 4: Clone + read structure
     repo_summary = ""
     try:
         token = os.getenv("GITHUB_TOKEN", "")
+        notify("clone", "Cloning repository for structural context…")
         repo_path = clone_repo(pr_data["clone_url"], token)
         structure = read_directory_structure(repo_path)
+        notify("summary", "Summarising the codebase…")
         repo_summary = summarise_repository(structure, pr_data["changed_files"])
     except Exception as e:
-        errors.append(f"Repo clone/summary failed: {str(e)}")
+        errors.append(f"Repo clone/summary failed: {scrub_secrets(str(e))}")
         repo_summary = (
             "Repository structure could not be cloned locally; analysis will continue "
             "with GitHub metadata only."

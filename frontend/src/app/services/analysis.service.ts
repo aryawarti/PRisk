@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { API_BASE_URL } from '../api-config';
 
 export interface AnalysisResult {
@@ -13,6 +13,7 @@ export interface AnalysisResult {
   author: string;
   name: string;
   repo_name: string;
+  changed_files: string[];
   change_analysis: {
     summary: string;
     change_type: string;
@@ -75,19 +76,31 @@ export interface AnalysisResult {
   errors: string[];
 }
 
+/** Events emitted by the streaming endpoint. */
+export type AnalysisStreamEvent =
+  | { type: 'status'; stage: string; label: string }
+  | { type: 'result'; payload: AnalysisResult }
+  | { type: 'error'; status?: number; message: string };
+
+/** Thrown when the SSE transport itself fails before any event arrives —
+ *  the caller can fall back to the plain POST endpoint. */
+export class StreamTransportError extends Error {}
+
 @Injectable({ providedIn: 'root' })
 export class AnalysisService {
-  // ← Make sure this matches your FastAPI port (8000)
   private readonly apiUrl = `${API_BASE_URL}/api/analyse`;
+  private readonly streamUrl = `${API_BASE_URL}/api/analyse/stream`;
 
   constructor(private http: HttpClient) {}
 
+  /** Classic invoke-and-wait call. Kept as the streaming fallback. */
   analysePR(prUrl: string): Observable<AnalysisResult> {
     return this.http.post<AnalysisResult>(this.apiUrl, { pr_url: prUrl }).pipe(
       catchError((err: HttpErrorResponse) => {
-        let message = 'Unknown error occurred';
+        let message = 'Something went wrong while analysing this pull request.';
         if (err.status === 0) {
-          message = 'Cannot reach the backend. Is FastAPI running on port 8000?';
+          message =
+            'Cannot reach the analysis service. It may be waking up — please try again in ~30 seconds.';
         } else if (err.error?.detail) {
           message = err.error.detail;
         } else if (err.message) {
@@ -96,5 +109,66 @@ export class AnalysisService {
         return throwError(() => new Error(message));
       }),
     );
+  }
+
+  /**
+   * Streaming analysis over Server-Sent Events.
+   * EventSource only supports GET, so we POST with fetch() and parse the
+   * SSE frames off the response body ourselves.
+   *
+   * Resolves once the stream ends. Every parsed event is handed to
+   * `onEvent` as it arrives, including the final result/error event.
+   */
+  async analysePRStream(
+    prUrl: string,
+    onEvent: (event: AnalysisStreamEvent) => void,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    let response: Response;
+    try {
+      response = await fetch(this.streamUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pr_url: prUrl }),
+        signal,
+      });
+    } catch (err) {
+      if ((err as Error)?.name === 'AbortError') throw err;
+      throw new StreamTransportError('Streaming endpoint unreachable');
+    }
+
+    if (!response.ok || !response.body) {
+      throw new StreamTransportError(`Streaming endpoint returned ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    const dispatchFrames = (chunk: string) => {
+      buffer += chunk;
+      // SSE frames are separated by a blank line.
+      const frames = buffer.split('\n\n');
+      buffer = frames.pop() ?? '';
+      for (const frame of frames) {
+        for (const line of frame.split('\n')) {
+          if (!line.startsWith('data:')) continue; // ignore comments/heartbeats
+          const raw = line.slice(5).trim();
+          if (!raw) continue;
+          try {
+            onEvent(JSON.parse(raw) as AnalysisStreamEvent);
+          } catch {
+            // Malformed frame — skip rather than break the whole stream.
+          }
+        }
+      }
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      dispatchFrames(decoder.decode(value, { stream: true }));
+    }
+    dispatchFrames(decoder.decode());
   }
 }
