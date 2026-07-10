@@ -22,6 +22,16 @@ export function buildMarkdownReport(r: AnalysisResult): string {
       ? items.map((f) => `- **[${f.severity}]** ${f.text} _(${f.effort})_`).join('\n')
       : '';
 
+  const de = r.dependency_evidence;
+  const measured =
+    de?.available && de.edges.length
+      ? `\n### Measured dependents _(parsed from import statements — not AI inference)_\n\n${de.edges
+          .map((e) => `- \`${e.from_file}:${e.line}\` → \`${e.to_file}\`\n  \`${e.code}\``)
+          .join('\n')}\n`
+      : de?.available
+        ? `\n### Measured dependents\n\n_Import scan found no files depending on the changed code (${de.files_scanned} files scanned)._\n`
+        : '';
+
   const evidence =
     hr?.available && hr.files.length
       ? `\n### Historical risk evidence _(last ${hr.window_commits} commits)_\n\n${hr.files
@@ -76,7 +86,7 @@ ${br.reasoning}
 ${list(br.dependency_chain.map((c) => `\`${c}\``), '')}
 
 **User flows at risk:** ${br.user_flows_at_risk.join(', ') || '—'}
-${evidence}
+${measured}${evidence}
 ### Engineering review — ${er.overall_severity} (${er.total_issues_found} issue${er.total_issues_found === 1 ? '' : 's'})
 
 ${er.security.length ? `**Security**\n${findingList(er.security)}\n` : ''}${er.code_quality.length ? `**Code quality**\n${findingList(er.code_quality)}\n` : ''}${er.maintainability.length ? `**Maintainability**\n${findingList(er.maintainability)}\n` : ''}${er.performance.length ? `**Performance**\n${findingList(er.performance)}\n` : ''}${!er.total_issues_found ? '_No material issues found._\n' : ''}

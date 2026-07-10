@@ -29,6 +29,14 @@ export interface HistoryFileStat {
   authors: number;
 }
 
+export interface DependencyEdge {
+  from_file: string;
+  line: number;
+  code: string;
+  to_file: string;
+  symbol: string;
+}
+
 export interface AnalysisResult {
   success: boolean;
   pr_url: string;
@@ -44,6 +52,13 @@ export interface AnalysisResult {
     overall_level: string;
     hotspots: string[];
     files: HistoryFileStat[];
+  };
+  dependency_evidence: {
+    available: boolean;
+    files_scanned: number;
+    edges: DependencyEdge[];
+    dependents_by_file: Record<string, string[]>;
+    direct_dependents: number;
   };
   analysis_quality: {
     mode: 'full' | 'partial' | 'degraded';

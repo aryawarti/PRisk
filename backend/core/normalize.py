@@ -235,6 +235,41 @@ def _as_driver_list(value: Any) -> list[dict[str, Any]]:
     return drivers
 
 
+def normalize_dependency_evidence(data: Any) -> dict[str, Any]:
+    data = data if isinstance(data, dict) else {}
+    edges_raw = data.get("edges") if isinstance(data.get("edges"), list) else []
+    edges = []
+    for item in edges_raw[:50]:
+        if not isinstance(item, dict):
+            continue
+        from_file = _as_str(item.get("from_file"))
+        to_file = _as_str(item.get("to_file"))
+        if not from_file or not to_file:
+            continue
+        edges.append({
+            "from_file": from_file,
+            "line": _as_int(item.get("line")),
+            "code": _as_str(item.get("code"))[:160],
+            "to_file": to_file,
+            "symbol": _as_str(item.get("symbol")),
+        })
+
+    deps_raw = data.get("dependents_by_file") if isinstance(data.get("dependents_by_file"), dict) else {}
+    dependents_by_file = {
+        _as_str(key): _as_str_list(value)
+        for key, value in deps_raw.items()
+        if _as_str(key)
+    }
+
+    return {
+        "available": bool(data.get("available")),
+        "files_scanned": _as_int(data.get("files_scanned")),
+        "edges": edges,
+        "dependents_by_file": dependents_by_file,
+        "direct_dependents": _as_int(data.get("direct_dependents")),
+    }
+
+
 def normalize_confidence_report(data: Any) -> dict[str, Any]:
     data = data if isinstance(data, dict) else {}
     breakdown = data.get("breakdown") if isinstance(data.get("breakdown"), dict) else {}

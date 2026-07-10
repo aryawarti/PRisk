@@ -1,4 +1,17 @@
-# PRisk — Honest Failures (v1.4.4)
+# PRisk — Provable Blast Radius (v1.5.0)
+
+The moat. Every competitor's dependency claim is an LLM opinion — PRisk now **measures** it.
+
+- **Deterministic dependency graph** (`core/dependency_graph.py`): scans the cloned repo's import statements (Python `import`/`from`, Java `import`, JS/TS `import`/`require`) and finds the exact files that import what the PR changed — with **line-number citations of the actual code**: `gateway/routes/api.py:2 — from services.hotel_service import HotelService`. Capped scans (4000 files, 300KB each), vendored dirs skipped, false-positive guards on generic names.
+- **Score integration**: when the graph is available, the AI's impact opinion carries less weight (0.42 vs 0.55) and measured dependents carry real weight. Zero measured dependents *earns points back* ("Import scan found no files depending on the changed code: +2.0"). Drivers say "4 files measurably import the changed code: −4.3".
+- **Agent 2 grounding**: the blast-radius agent receives the measured edges labeled "treat as ground truth" — it explains around evidence instead of inventing dependents.
+- **UI**: new "Measured Dependents" block at the top of the Blast Radius panel with a "Proven from imports" tag, per-file citation rows (`file:line` + the import code itself); the AI's chains are now explicitly tagged "AI-inferred". The zero-dependents case renders as a green measured-safe block. Markdown export includes the citations.
+- New streaming stage: "Mapping the import graph — measuring real dependents…"
+- Verified against a synthetic multi-language repo: Java import, both Python import styles, and JS `require` detected with correct citations; unrelated files not flagged; end-to-end context build emits the graph stage and scoring reflects measured dependents.
+
+---
+
+# Honest Failures (v1.4.4)
 
 - **No more silent fallback (strict mode).** If the AI provider fails (rate limit, bad key, dead model), agents 1–4 now abort the whole analysis with a 503 and a plain-language reason ("rate limit reached — try again in about a minute") instead of presenting heuristic guesses as results. The UI states explicitly: *"Nothing was scored or guessed."* Heuristic report generation is gone; a report you see is always a real AI analysis. (Agent 5's prose fallback remains — it never affects the score.)
 - **Clear URL errors.** Invalid links are caught client-side before any request: the input gets a red ring, and a structured error card shows a title, explanation, and the expected format as a code chip. Nonexistent PRs return "Pull request not found: owner/repo #N — check the repository name and PR number" instead of GitHub's bare "Not Found".

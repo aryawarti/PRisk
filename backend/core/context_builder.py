@@ -29,6 +29,7 @@ from github import Github, GithubException
 from dotenv import load_dotenv
 
 from core.llm import get_llm
+from core.dependency_graph import build_dependency_evidence
 from core.fallbacks import infer_repository_summary
 from core.state import PRiskState
 
@@ -374,6 +375,7 @@ def build_repository_context(pr_url: str, emit: Optional[EmitFn] = None) -> PRis
     # Step 3 & 4: Clone + read structure + mine history
     repo_summary = ""
     history_risk = {"available": False, "window_commits": 0, "overall_level": "Low", "hotspots": [], "files": []}
+    dependency_evidence = {"available": False, "files_scanned": 0, "edges": [], "dependents_by_file": {}, "direct_dependents": 0}
     try:
         token = os.getenv("GITHUB_TOKEN", "")
         notify("clone", "Cloning repository for structural context…")
@@ -381,6 +383,8 @@ def build_repository_context(pr_url: str, emit: Optional[EmitFn] = None) -> PRis
         structure = read_directory_structure(repo_path)
         notify("history", "Mining commit history for risk evidence…")
         history_risk = mine_history_risk(repo_path, pr_data["changed_files"])
+        notify("graph", "Mapping the import graph — measuring real dependents…")
+        dependency_evidence = build_dependency_evidence(repo_path, pr_data["changed_files"])
         notify("summary", "Summarising the codebase…")
         repo_summary = summarise_repository(structure, pr_data["changed_files"])
     except Exception as e:
@@ -402,6 +406,7 @@ def build_repository_context(pr_url: str, emit: Optional[EmitFn] = None) -> PRis
         changed_files=pr_data["changed_files"],
         repo_summary=repo_summary,
         history_risk=history_risk,
+        dependency_evidence=dependency_evidence,
         pr_title=pr_data["title"],
         pr_description=pr_data["description"],
         author=pr_data["author"],

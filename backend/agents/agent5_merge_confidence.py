@@ -44,6 +44,7 @@ def merge_confidence_agent(state: PRiskState) -> PRiskState:
         history_risk=history_risk,
         changed_files=state.get("changed_files", []),
         diff=state.get("diff", ""),
+        dependency_evidence=state.get("dependency_evidence", {}),
     )
 
     # Step 2: LLM summary grounded in the computed drivers

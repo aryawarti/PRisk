@@ -56,6 +56,22 @@ def blast_radius_agent(state: PRiskState) -> PRiskState:
         state["repo_summary"],
     )
 
+    # Measured import-graph evidence: files that PROVABLY import the changed
+    # code. The LLM must treat these as ground truth, not re-derive them.
+    dependency_evidence = state.get("dependency_evidence") or {}
+    graph_section = ""
+    if dependency_evidence.get("available") and dependency_evidence.get("edges"):
+        graph_section = f"""
+
+MEASURED DEPENDENTS (parsed from actual import statements — treat as ground truth):
+{json.dumps(dependency_evidence.get("edges", [])[:20], indent=2)}
+These {dependency_evidence.get("direct_dependents", 0)} file(s) demonstrably import the changed code."""
+    elif dependency_evidence.get("available"):
+        graph_section = """
+
+MEASURED DEPENDENTS: import scan found NO files importing the changed code.
+Unless there is dynamic dispatch/reflection, direct blast radius is likely small."""
+
     # Evidence from git history (mined by context_builder). A file with a
     # track record of fixes/reverts is empirically riskier to change.
     history_risk = state.get("history_risk") or {}
@@ -78,6 +94,7 @@ CHANGED FILES:
 
     OPTIONAL CHANGE SUMMARY:
 {json.dumps(change_analysis, indent=2)}
+{graph_section}
 {history_section}
 
 DIFF EXCERPT:

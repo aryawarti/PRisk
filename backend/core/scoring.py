@@ -55,17 +55,41 @@ class _Drivers:
 _BLAST_BASE_PENALTY = {"low": 0.12, "none": 0.08, "medium": 0.42, "high": 0.68, "critical": 0.92, "unknown": 0.40}
 
 
-def _score_blast(blast: dict, history: dict, changed_files: list[str]) -> tuple[int, list[dict]]:
+def _score_blast(
+    blast: dict,
+    history: dict,
+    changed_files: list[str],
+    dependency_evidence: dict | None = None,
+) -> tuple[int, list[dict]]:
     max_pts = 40.0
     drivers = _Drivers()
+    graph = dependency_evidence or {}
+    graph_available = bool(graph.get("available"))
+
+    # When we have MEASURED dependents, the AI's opinion carries less weight
+    # and the import graph carries real weight. Evidence beats judgment.
+    ai_weight = 0.42 if graph_available else 0.55
 
     level = _level(blast.get("impact_level"))
     base = _BLAST_BASE_PENALTY.get(level, 0.40)
-    drivers.add(f"AI-assessed impact level: {level.title()}", -base * 0.55 * max_pts)
+    drivers.add(f"AI-assessed impact level: {level.title()}", -base * ai_weight * max_pts)
+
+    graph_frac = 0.0
+    if graph_available:
+        dependents = max(0, int(graph.get("direct_dependents") or 0))
+        if dependents:
+            graph_frac = _saturate(dependents, 5) * 0.24
+            drivers.add(
+                f"{dependents} file{'s' if dependents != 1 else ''} measurably import the changed code",
+                -graph_frac * max_pts,
+            )
+        else:
+            graph_frac = -0.05
+            drivers.add("Import scan found no files depending on the changed code", +0.05 * max_pts)
 
     downstream = max(0, int(blast.get("estimated_downstream_services") or 0))
     if downstream:
-        frac = _saturate(downstream, 6) * 0.22
+        frac = _saturate(downstream, 6) * (0.15 if graph_available else 0.22)
         drivers.add(f"{downstream} downstream service{'s' if downstream != 1 else ''} potentially affected", -frac * max_pts)
     else:
         frac = 0.0
@@ -92,7 +116,7 @@ def _score_blast(blast: dict, history: dict, changed_files: list[str]) -> tuple[
             drivers.add("Git history is clean for the touched files", +0.04 * max_pts)
             hist_frac = -0.04
 
-    penalty = _clamp(base * 0.55 + frac + breadth + hist_frac)
+    penalty = _clamp(base * ai_weight + graph_frac + frac + breadth + hist_frac)
     return round(max_pts * (1 - penalty)), drivers.items
 
 
@@ -223,13 +247,16 @@ def compute_confidence(
     history_risk: dict,
     changed_files: list[str],
     diff: str,
+    dependency_evidence: dict | None = None,
 ) -> dict:
     """
     Deterministic, evidence-blended confidence score with full provenance.
     Returns the same outer shape the frontend already binds to, plus
     `score_drivers` explaining every dimension.
     """
-    blast_score, blast_drivers = _score_blast(blast_radius or {}, history_risk or {}, changed_files or [])
+    blast_score, blast_drivers = _score_blast(
+        blast_radius or {}, history_risk or {}, changed_files or [], dependency_evidence
+    )
     eng_score, eng_drivers = _score_engineering(engineering_review or {})
     test_score, test_drivers = _score_testing(testing_strategy or {}, changed_files or [])
     complexity_score, complexity_drivers = _score_complexity(change_analysis or {}, diff or "", changed_files or [])

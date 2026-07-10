@@ -1,7 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-import { AnalysisResult, Finding, HistoryFileStat, ScoreDriver } from '../../services/analysis.service';
+import {
+  AnalysisResult,
+  DependencyEdge,
+  Finding,
+  HistoryFileStat,
+  ScoreDriver,
+} from '../../services/analysis.service';
 
 type DashboardSectionKey = 'change' | 'blast' | 'engineering' | 'testing' | 'confidence';
 
@@ -118,6 +124,23 @@ export class DashboardComponent {
       const isEpicenter = moduleTokens.some((token) => flattened.includes(token));
       return { path, risk: isEpicenter ? ('epicenter' as const) : ('standard' as const) };
     });
+  }
+
+  /** Measured import edges, grouped by the changed file they point at. */
+  get measuredDependents(): { changedFile: string; edges: DependencyEdge[] }[] {
+    const evidence = this.result?.dependency_evidence;
+    if (!evidence?.available || !evidence.edges.length) return [];
+    const groups = new Map<string, DependencyEdge[]>();
+    for (const edge of evidence.edges) {
+      const list = groups.get(edge.to_file) ?? [];
+      list.push(edge);
+      groups.set(edge.to_file, list);
+    }
+    return [...groups.entries()].map(([changedFile, edges]) => ({ changedFile, edges }));
+  }
+
+  get graphScanned(): boolean {
+    return !!this.result?.dependency_evidence?.available;
   }
 
   /** Dependency chains parsed into node lists for the visual chain renderer. */

@@ -127,8 +127,43 @@
             </div>
           </div>
 
+          <!-- MEASURED evidence: actual import statements, with citations -->
+          <div class="content-block evidence-measured" *ngIf="measuredDependents.length">
+            <p class="label">
+              Measured Dependents
+              <span class="proof-tag">Proven from imports</span>
+            </p>
+            <div class="dependent-group" *ngFor="let group of measuredDependents">
+              <p class="dependent-target">
+                Files importing <code class="inline-code" [attr.title]="group.changedFile">{{ group.changedFile }}</code>
+              </p>
+              <div class="citation" *ngFor="let edge of group.edges">
+                <span class="citation-loc" [attr.title]="edge.from_file">{{ edge.from_file }}:{{ edge.line }}</span>
+                <code class="citation-code" [attr.title]="edge.code">{{ edge.code }}</code>
+              </div>
+            </div>
+            <p class="file-hint">
+              These edges are parsed from real import statements in the repository — not AI inference.
+            </p>
+          </div>
+
+          <div class="content-block evidence-clear" *ngIf="graphScanned && !measuredDependents.length">
+            <p class="label">
+              Measured Dependents
+              <span class="proof-tag">Proven from imports</span>
+            </p>
+            <p class="body-copy">
+              Import scan found no files depending on the changed code
+              ({{ result.dependency_evidence.files_scanned }} source files scanned).
+              Direct blast radius is measurably small.
+            </p>
+          </div>
+
           <div class="content-block" *ngIf="dependencyChains.length">
-            <p class="label">Dependency Chains</p>
+            <p class="label">
+              Dependency Chains
+              <span class="ai-tag">AI-inferred</span>
+            </p>
             <div class="chain-row" *ngFor="let chain of dependencyChains">
               <ng-container *ngFor="let node of chain; let last = last">
                 <span class="chain-node">{{ node }}</span>

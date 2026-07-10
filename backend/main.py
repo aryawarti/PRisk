@@ -41,6 +41,7 @@ from core.normalize import (
     normalize_blast_radius,
     normalize_change_analysis,
     normalize_confidence_report,
+    normalize_dependency_evidence,
     normalize_engineering_review,
     normalize_history_risk,
     normalize_testing_strategy,
@@ -93,6 +94,7 @@ class AnalyseResponse(BaseModel):
     repo_name: str
     changed_files: list
     history_risk: dict
+    dependency_evidence: dict
     analysis_quality: dict
     change_analysis: dict
     blast_radius: dict
@@ -162,6 +164,7 @@ def build_response_payload(final_state: dict) -> dict:
         "repo_name": final_state["repo_name"],
         "changed_files": [str(f) for f in final_state.get("changed_files", [])],
         "history_risk": normalize_history_risk(final_state.get("history_risk")),
+        "dependency_evidence": normalize_dependency_evidence(final_state.get("dependency_evidence")),
         "analysis_quality": build_analysis_quality(final_state.get("errors", [])),
         "change_analysis": normalize_change_analysis(final_state.get("change_analysis")),
         "blast_radius": normalize_blast_radius(final_state.get("blast_radius")),

@@ -34,6 +34,10 @@ class PRiskState(TypedDict):
     # Evidence mined from git history: per-changed-file churn, fix/revert
     # counts, hotspot flags. Populated by mine_history_risk in context_builder.
     history_risk: Dict[str, Any]
+
+    # Measured import-graph evidence: which files actually import the changed
+    # code, with line-number citations. Populated by build_dependency_evidence.
+    dependency_evidence: Dict[str, Any]
     # PR metadata carried through the analysis response.
     pr_title: str
     pr_description: str
