@@ -1,4 +1,70 @@
-# PRisk — Startup-Grade Rebuild (v1.2.0)
+# PRisk — Panel Interiors (v1.4.3)
+
+- Every expanded section rebuilt from "stacked labeled boxes" into a scannable layout: a **stat strip** on top (segmented metrics with dividers — change type/lines/complexity/files; impact/downstream/modules/flows; severity/issues/clear-categories; coverage/count/test types), a **lede** summary line with brand accent instead of a boxed paragraph, and **two-column grids** for related detail blocks.
+- **Dependency chains are now visual**: `configServer → serviceRegistry → hospitalService` renders as monospace node chips connected by arrows instead of ASCII text in bullets.
+- Bullet walls replaced with **accent lists** (square teal markers), list labels carry **count pills** ("Missing Tests ⑤"), positive notes became a green "What Was Done Well" block, and priority tests are headed "Write These First". Stat strips collapse to a 2-per-row grid on mobile.
+
+---
+
+# Header Scorecard (v1.4.2)
+
+- Section headers upgraded from bare adjective pills to a scorecard: each header now shows a contextual verdict pill ("Medium impact", "High severity" instead of ambiguous "Medium"/"High"), the **points that dimension contributed** ("21/40"), and a tone-colored mini-meter. The Merge Confidence header shows the recommendation instead of duplicating the gauge's percentage. Collapsed sections now read as a complete scorecard without opening anything. Score cell hides on narrow screens to avoid clutter.
+
+---
+
+# Instant History Snapshots (v1.4.1)
+
+- Clicking a recent analysis now opens the **saved report instantly** (full report cached in localStorage) instead of re-running the whole pipeline. A brand-tinted bar shows "Saved snapshot from Xm ago — the PR may have new commits since" with an explicit **Re-analyse now** button, preserving the score-delta loop as a deliberate action.
+- Storage quota safety: if localStorage is full, history falls back to storing score metadata only (old behaviour — clicking those re-runs).
+
+---
+
+# Trust Refactor (v1.4.0)
+
+Round 4: the score is now deterministic, granular, explainable, and honest about how it was produced.
+
+## Root cause of the "identical 57" bug — fixed
+
+- **Groq deprecated `llama-3.3-70b-versatile` (June 17, 2026)** for free/developer tiers. Every LLM call failed; all five agents silently fell back to heuristics; similar PRs bucketed to identical scores. Default model is now **`openai/gpt-oss-120b`** (Groq's recommended migration). ⚠️ **Action needed:** if `GROQ_MODEL` is set to the old model in your local `.env` or Render environment variables, remove or update it.
+
+## New scoring engine (`core/scoring.py`)
+
+- **Deterministic**: no LLM in the arithmetic — same inputs always produce the same score. Weights unchanged (Blast 40 / Eng 30 / Test 20 / Complexity 10), bands unchanged (80/60).
+- **Granular**: continuous math over measured quantities — real diff line counts (not the LLM's estimate), severity-weighted finding loads (Critical 1.0 / High .55 / Medium .25 / Low .10, security ×1.5, saturating curve), downstream-service counts, file breadth, hotspot history. Two different PRs virtually never tie.
+- **Evidence-blended**: AI judgment sets each dimension's base; hard facts (test files present in the diff, git fix history, measured size) move it. Clean git history now *earns* points back.
+- **Explainable**: every dimension returns `score_drivers` — the exact signals and the points each cost or restored. Rendered in the Merge Confidence breakdown cards and in the Markdown export ("Why these scores").
+- Verified: a small guarded fix scored **88 (Safe to Merge)** while a broad no-test routing refactor scored **60 (Needs Validation)** — in fully degraded (no-LLM) mode, where the old system returned identical 57s.
+
+## Honest degradation
+
+- **`invoke_llm_json` / `invoke_llm_text`** (`core/llm.py`): single validated path for all agents — retry on transient failure, JSON parsing, required-key schema checks. A half-formed AI answer can no longer silently enter the report.
+- **`analysis_quality`** in every response: `full` / `partial` / `degraded`, with the list of agents that fell back and a plain-language note. The UI shows an amber/red banner when the analysis wasn't fully AI-powered, and the Markdown export carries the same warning. Silent fallback is gone.
+- Agent 5's executive summary is now written *from the computed drivers* — the narrative can no longer contradict the number. (Its fallback only affects prose, never the score.)
+
+---
+
+# Round 3 — Evidence Engine (v1.3.0)
+
+Round 3: the standalone-maker. Risk claims are now backed by git evidence, and findings carry severity + effort.
+
+## Historical Risk Evidence (new signal)
+
+- **`mine_history_risk`** (`core/context_builder.py`): clones now fetch recent history (`CLONE_DEPTH`, default 300 commits, single branch) and mine it per changed file — total changes, fix/revert/hotfix commit count, days since last touch, distinct authors. One `git log` subprocess; adds ~1–3s.
+- **Hotspots**: files with ≥2 fix-commits are flagged. Any hotspot ⇒ overall history level High.
+- **Agent 2 grounding**: the blast-radius agent now receives the evidence table in its prompt and is told to weigh empirically fragile files when setting `impact_level`. The 40/30/20/10 scoring formula is unchanged.
+- **UI**: new "Historical Risk Evidence" block in the Blast Radius panel (per-file fix/change counts, recency); file pins gain a red **Hotspot** state alongside Epicenter; new "Mining commit history…" streaming stage; evidence included in the Markdown export.
+- Fails soft: if history can't be read (or clone failed), `history_risk.available=false` and the UI simply omits the block.
+
+## Severity-first findings
+
+- **Agents 3 & 4 return structured findings**: engineering issues are now `{text, severity: Critical|High|Medium|Low, effort: "Quick fix"|"Needs thought"}`; priority tests are `{text, effort: Easy|Medium|Involved}`.
+- **Normalization accepts both shapes** (strings from heuristic fallbacks or objects from LLMs) — old outputs still render, no regression. Security findings default to High severity when unspecified.
+- **Engineering panel redesigned**: findings grouped under severity headings (worst first) as cards with a colored severity edge, category tag, and effort chip; clean categories shown as ✓ chips; a proper "No issues found" state.
+- **Verified**: live run shows the history stage streaming, correct per-file evidence (README in octocat/Hello-World: 2 changes, 2 authors, ~15 years old), normalization unit-checked, Angular AOT typecheck zero errors.
+
+---
+
+# Round 2 — Startup-Grade Rebuild (v1.2.0)
 
 Round 2: full visual rebuild + three differentiator features. Same product, same pipeline, same hosting.
 

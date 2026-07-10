@@ -25,8 +25,8 @@ OUTPUT (written back to state):
 
 import json
 from core.state import PRiskState
-from core.fallbacks import infer_testing_strategy, parse_json_response
-from core.llm import get_llm
+from core.fallbacks import infer_testing_strategy
+from core.llm import invoke_llm_json
 
 
 def testing_strategy_agent(state: PRiskState) -> PRiskState:
@@ -84,7 +84,7 @@ Return ONLY valid JSON:
   ],
   "recommended_test_types": ["Unit", "Integration", "Contract", "E2E"],
   "priority_tests": [
-    "The 1-3 most critical tests to write first"
+    {{"text": "The most critical test to write first", "effort": "One of: Easy, Medium, Involved"}}
   ],
   "test_coverage_assessment": "One of: Likely Adequate, Needs More Tests, Critical Gaps",
   "total_tests_recommended": <integer>
@@ -93,9 +93,10 @@ Return ONLY valid JSON:
 Do NOT include markdown code fences or any text outside the JSON object."""
 
     try:
-        llm = get_llm()
-        response = llm.invoke(prompt)
-        testing_strategy = parse_json_response(response.content)
+        testing_strategy = invoke_llm_json(
+            prompt,
+            required_keys=("missing_tests", "test_coverage_assessment"),
+        )
     except Exception as e:
         testing_strategy = infer_testing_strategy(
             state["changed_files"],

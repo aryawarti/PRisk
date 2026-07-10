@@ -37,6 +37,8 @@ export class AppComponent {
   readonly errorMessage = signal('');
   readonly progressSteps = signal<ProgressStep[]>([]);
   readonly copied = signal(false);
+  /** When viewing a saved snapshot from history: its capture timestamp. */
+  readonly snapshotTime = signal<number | null>(null);
 
   private abortController: AbortController | null = null;
   private copiedTimer: ReturnType<typeof setTimeout> | null = null;
@@ -53,6 +55,7 @@ export class AppComponent {
     this.state.set('loading');
     this.result.set(null);
     this.errorMessage.set('');
+    this.snapshotTime.set(null);
     this.progressSteps.set([{ stage: 'connect', label: 'Connecting to analysis engine…', status: 'active' }]);
 
     this.abortController = new AbortController();
@@ -80,10 +83,23 @@ export class AppComponent {
     }
   }
 
-  rerun(entry: HistoryEntry): void {
+  /**
+   * Open a history entry: show the saved snapshot instantly when we have it
+   * (viewing is free); fall back to re-analysing for old entries without one.
+   * A visible "Re-analyse" action refreshes deliberately.
+   */
+  openHistory(entry: HistoryEntry): void {
     if (this.state() === 'loading') return;
     this.prUrl = entry.pr_url;
-    void this.analyse();
+    if (entry.report) {
+      this.result.set(entry.report);
+      this.errorMessage.set('');
+      this.progressSteps.set([]);
+      this.snapshotTime.set(entry.timestamp);
+      this.state.set('done');
+    } else {
+      void this.analyse();
+    }
   }
 
   async copyReport(): Promise<void> {
@@ -146,6 +162,7 @@ export class AppComponent {
     this.result.set(null);
     this.errorMessage.set('');
     this.progressSteps.set([]);
+    this.snapshotTime.set(null);
     this.prUrl = '';
   }
 

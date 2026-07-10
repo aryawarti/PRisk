@@ -23,8 +23,8 @@ OUTPUT (written back to state):
 
 import json
 from core.state import PRiskState
-from core.fallbacks import infer_engineering_review, parse_json_response
-from core.llm import get_llm
+from core.fallbacks import infer_engineering_review
+from core.llm import invoke_llm_json
 
 
 MAX_DIFF_CHARS = 5000    # Give this agent a bit more context since it's reading code
@@ -57,19 +57,24 @@ For each issue, be SPECIFIC — mention the actual method name, variable, or lin
 Do NOT invent issues that don't exist in the diff.
 If a category has no issues, return an empty list for it.
 
+Each finding is an OBJECT with three keys:
+  "text"     — the specific issue
+  "severity" — one of: Critical, High, Medium, Low
+  "effort"   — one of: "Quick fix" (mechanical, <15 min) or "Needs thought" (design decision required)
+
 Return ONLY valid JSON:
 {{
   "security": [
-    "Specific security issue found, e.g. 'userId from request body is used in SQL query without sanitisation'"
+    {{"text": "userId from request body used in SQL query without sanitisation", "severity": "Critical", "effort": "Quick fix"}}
   ],
   "performance": [
-    "Specific performance issue, e.g. 'getOrders() called inside for-loop — potential N+1 query'"
+    {{"text": "getOrders() called inside for-loop — potential N+1 query", "severity": "Medium", "effort": "Needs thought"}}
   ],
   "maintainability": [
-    "Specific maintainability issue, e.g. 'processPayment() is 180 lines — should be split'"
+    {{"text": "processPayment() is 180 lines — should be split", "severity": "Low", "effort": "Needs thought"}}
   ],
   "code_quality": [
-    "Specific quality issue, e.g. 'Null check duplicated in 3 places — extract to helper'"
+    {{"text": "Null check duplicated in 3 places — extract to helper", "severity": "Low", "effort": "Quick fix"}}
   ],
   "overall_severity": "One of: Low, Medium, High, Critical",
   "positive_notes": [
@@ -81,9 +86,10 @@ Return ONLY valid JSON:
 Do NOT include markdown code fences or any text outside the JSON object."""
 
     try:
-        llm = get_llm()
-        response = llm.invoke(prompt)
-        engineering_review = parse_json_response(response.content)
+        engineering_review = invoke_llm_json(
+            prompt,
+            required_keys=("security", "performance", "maintainability", "code_quality", "overall_severity"),
+        )
     except Exception as e:
         engineering_review = infer_engineering_review(state["diff"], state["changed_files"])
         local_errors.append(f"Agent 3 used heuristic fallback: {e}")

@@ -20,8 +20,8 @@ OUTPUT (written back to state):
 """
 import json
 from core.state import PRiskState
-from core.fallbacks import infer_change_analysis, parse_json_response
-from core.llm import get_llm
+from core.fallbacks import infer_change_analysis
+from core.llm import invoke_llm_json
 
 
 # Limit diff length sent to LLM to avoid token overflows.
@@ -72,9 +72,10 @@ Return ONLY valid JSON with these exact keys:
 Do NOT include markdown code fences or any text outside the JSON object."""
 
     try:
-        llm = get_llm()
-        response = llm.invoke(prompt)
-        change_analysis = parse_json_response(response.content)
+        change_analysis = invoke_llm_json(
+            prompt,
+            required_keys=("summary", "change_type", "complexity"),
+        )
     except Exception as e:
         change_analysis = infer_change_analysis(
             state["changed_files"],

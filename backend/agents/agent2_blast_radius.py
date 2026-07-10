@@ -32,9 +32,8 @@ from core.state import PRiskState
 from core.fallbacks import (
     infer_blast_radius,
     infer_change_analysis,
-    parse_json_response,
 )
-from core.llm import get_llm
+from core.llm import invoke_llm_json
 
 
 MAX_DIFF_CHARS = 4000
@@ -60,6 +59,18 @@ def blast_radius_agent(state: PRiskState) -> PRiskState:
         state["repo_summary"],
     )
 
+    # Evidence from git history (mined by context_builder). A file with a
+    # track record of fixes/reverts is empirically riskier to change.
+    history_risk = state.get("history_risk") or {}
+    history_section = ""
+    if history_risk.get("available") and history_risk.get("files"):
+        history_section = f"""
+
+HISTORICAL RISK EVIDENCE (mined from the last {history_risk.get("window_commits", 0)} commits):
+{json.dumps(history_risk.get("files", []), indent=2)}
+Files listed with high "fix_commits" have repeatedly needed bug fixes or reverts —
+weigh them as empirically fragile when estimating impact_level."""
+
     prompt = f"""You are a senior software architect performing a blast radius analysis.
 
 REPOSITORY:
@@ -70,6 +81,7 @@ CHANGED FILES:
 
     OPTIONAL CHANGE SUMMARY:
 {json.dumps(change_analysis, indent=2)}
+{history_section}
 
 DIFF EXCERPT:
 {diff_text}
@@ -95,9 +107,10 @@ Return ONLY valid JSON with these exact keys:
 Do NOT include markdown code fences or any text outside the JSON object."""
 
     try:
-        llm = get_llm()
-        response = llm.invoke(prompt)
-        blast_radius = parse_json_response(response.content)
+        blast_radius = invoke_llm_json(
+            prompt,
+            required_keys=("affected_modules", "impact_level", "reasoning"),
+        )
     except Exception as e:
         blast_radius = infer_blast_radius(
             state["changed_files"],

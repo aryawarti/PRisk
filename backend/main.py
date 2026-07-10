@@ -26,6 +26,7 @@ import asyncio
 import json
 import os
 import queue
+import re
 import threading
 import traceback
 
@@ -40,6 +41,7 @@ from core.normalize import (
     normalize_change_analysis,
     normalize_confidence_report,
     normalize_engineering_review,
+    normalize_history_risk,
     normalize_testing_strategy,
 )
 from core.workflow import run_analysis, stream_analysis
@@ -89,12 +91,61 @@ class AnalyseResponse(BaseModel):
     name: str
     repo_name: str
     changed_files: list
+    history_risk: dict
+    analysis_quality: dict
     change_analysis: dict
     blast_radius: dict
     engineering_review: dict
     testing_strategy: dict
     confidence_report: dict
     errors: list
+
+
+_AGENT_NAMES = {
+    1: "Change Understanding",
+    2: "Blast Radius",
+    3: "Engineering Review",
+    4: "Testing Strategy",
+    5: "Confidence Summary",
+}
+
+_FALLBACK_RE = re.compile(r"Agent (\d) used (?:heuristic|summary) fallback")
+
+
+def build_analysis_quality(errors: list) -> dict:
+    """
+    Honest label for how this report was produced. Users deciding whether to
+    merge deserve to know if the AI actually ran or heuristics filled in.
+    """
+    degraded_ids = sorted({int(m.group(1)) for e in errors for m in [_FALLBACK_RE.search(str(e))] if m})
+    clone_failed = any("clone/summary failed" in str(e).lower() for e in errors)
+
+    # Agent 5's summary fallback doesn't affect the score, only prose.
+    scoring_agents_degraded = [i for i in degraded_ids if i != 5]
+
+    if not degraded_ids and not clone_failed:
+        mode = "full"
+        note = "All five agents completed AI analysis with repository evidence."
+    elif len(scoring_agents_degraded) >= 3:
+        mode = "degraded"
+        note = (
+            "AI analysis was unavailable — this report was produced by deterministic "
+            "heuristics and git evidence only. Judgment-based sections are approximate; "
+            "check the configured LLM provider and API key."
+        )
+    else:
+        mode = "partial"
+        names = ", ".join(_AGENT_NAMES[i] for i in degraded_ids)
+        note = f"Some agents fell back to deterministic heuristics ({names}). The score still reflects measured evidence."
+        if clone_failed and not degraded_ids:
+            note = "Repository clone failed — history evidence unavailable; analysis used GitHub metadata only."
+
+    return {
+        "mode": mode,
+        "degraded_agents": [_AGENT_NAMES[i] for i in degraded_ids],
+        "history_evidence": not clone_failed,
+        "note": note,
+    }
 
 
 def build_response_payload(final_state: dict) -> dict:
@@ -112,6 +163,8 @@ def build_response_payload(final_state: dict) -> dict:
         "name": final_state.get("name", ""),
         "repo_name": final_state["repo_name"],
         "changed_files": [str(f) for f in final_state.get("changed_files", [])],
+        "history_risk": normalize_history_risk(final_state.get("history_risk")),
+        "analysis_quality": build_analysis_quality(final_state.get("errors", [])),
         "change_analysis": normalize_change_analysis(final_state.get("change_analysis")),
         "blast_radius": normalize_blast_radius(final_state.get("blast_radius")),
         "engineering_review": normalize_engineering_review(final_state.get("engineering_review")),

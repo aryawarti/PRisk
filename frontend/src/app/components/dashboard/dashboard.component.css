@@ -132,6 +132,56 @@
   color: var(--red-700);
 }
 
+/* ── Header score cell (points + mini meter) ── */
+.section-scorecell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 58px;
+}
+
+.section-points {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink-900);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.section-points-max {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-300);
+}
+
+.mini-track {
+  width: 58px;
+  height: 4px;
+  border-radius: 999px;
+  background: #edf2f5;
+  overflow: hidden;
+}
+
+.mini-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ink-300);
+  transition: width 0.6s var(--ease);
+}
+
+.mini-fill[data-tone='green'] {
+  background: var(--green-500);
+}
+
+.mini-fill[data-tone='amber'] {
+  background: var(--amber-500);
+}
+
+.mini-fill[data-tone='red'] {
+  background: var(--red-500);
+}
+
 .chevron {
   width: 10px;
   height: 10px;
@@ -168,6 +218,159 @@
 .panel-grid {
   display: grid;
   gap: 14px;
+}
+
+/* ── Stat strip (panel-top summary) ── */
+.stat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.stat {
+  flex: 1 1 120px;
+  min-width: 120px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+}
+
+.stat + .stat {
+  border-left: 1px solid var(--border);
+}
+
+.stat .label {
+  margin: 0;
+}
+
+.stat-value {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink-900);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-tokens {
+  gap: 6px;
+}
+
+.token-small {
+  min-height: 24px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* ── Lede (headline summary, no box) ── */
+.lede {
+  margin: 2px 0;
+  padding: 2px 0 2px 14px;
+  border-left: 3px solid var(--brand-500);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-700);
+}
+
+/* ── Two-column detail layout ── */
+.duo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* ── Accent lists (replaces plain bullets) ── */
+.accent-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.accent-list li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-700);
+}
+
+.accent-list li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--brand-500);
+}
+
+.positive-block {
+  border-color: var(--green-border);
+  background: var(--green-100);
+}
+
+.positive-list li::before {
+  background: var(--green-500);
+  border-radius: 50%;
+}
+
+.label-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--brand-050);
+  border: 1px solid var(--brand-100);
+  color: var(--brand-700);
+  font-size: 11px;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
+/* ── Dependency chain visual ── */
+.chain-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.chain-row + .chain-row {
+  border-top: 1px dashed var(--border);
+}
+
+.chain-node {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--brand-100);
+  border-radius: var(--radius-sm);
+  background: var(--brand-050);
+  font-family: 'SF Mono', 'Cascadia Code', Consolas, monospace;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brand-900);
+}
+
+.chain-arrow {
+  color: var(--ink-300);
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .content-block,
@@ -310,6 +513,223 @@
   margin: 10px 0 0;
   font-size: 12.5px;
   color: var(--ink-400);
+}
+
+/* ── Severity-first findings ── */
+.severity-group {
+  display: grid;
+  gap: 8px;
+}
+
+.severity-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.severity-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.severity-chip[data-severity='Critical'] {
+  background: var(--red-700);
+  color: #ffffff;
+}
+
+.severity-chip[data-severity='High'] {
+  background: var(--red-100);
+  color: var(--red-700);
+  border: 1px solid var(--red-border);
+}
+
+.severity-chip[data-severity='Medium'] {
+  background: var(--amber-100);
+  color: var(--amber-700);
+  border: 1px solid var(--amber-border);
+}
+
+.severity-chip[data-severity='Low'] {
+  background: var(--surface-2);
+  color: var(--ink-500);
+  border: 1px solid var(--border-strong);
+}
+
+.severity-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-400);
+}
+
+.finding-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.finding-card[data-severity='Critical'],
+.finding-card[data-severity='High'] {
+  border-left-color: var(--red-500);
+}
+
+.finding-card[data-severity='Medium'] {
+  border-left-color: var(--amber-500);
+}
+
+.finding-card[data-severity='Low'] {
+  border-left-color: var(--border-strong);
+}
+
+.finding-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-700);
+}
+
+.finding-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.finding-category,
+.finding-effort {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.finding-category {
+  background: var(--brand-050);
+  border: 1px solid var(--brand-100);
+  color: var(--brand-700);
+}
+
+.finding-effort {
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  color: var(--ink-500);
+}
+
+.finding-effort[data-effort='Quick fix'],
+.finding-effort[data-effort='Easy'] {
+  background: var(--green-100);
+  border-color: var(--green-border);
+  color: var(--green-700);
+}
+
+.finding-effort[data-effort='Involved'] {
+  background: var(--amber-100);
+  border-color: var(--amber-border);
+  color: var(--amber-700);
+}
+
+.all-clear {
+  border-color: var(--green-border);
+  background: var(--green-100);
+}
+
+.all-clear-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--green-700);
+}
+
+.token-clear {
+  border-color: var(--green-border);
+  background: var(--green-100);
+  color: var(--green-700);
+}
+
+/* ── Historical risk evidence ── */
+.label-detail {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-300);
+  margin-left: 6px;
+}
+
+.history-evidence {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.evidence-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  min-width: 0;
+}
+
+.evidence-row[data-hot='true'] {
+  border-color: var(--red-border);
+  background: var(--red-100);
+}
+
+.evidence-stats {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.evidence-stat {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-400);
+  white-space: nowrap;
+}
+
+.evidence-alert {
+  color: var(--red-700);
+}
+
+.file-tag-hotspot {
+  color: var(--red-700);
+}
+
+.file-row[data-risk='hotspot'] {
+  border-color: var(--red-border);
+  background: var(--red-100);
+}
+
+.file-row[data-risk='hotspot'] .file-pin {
+  background: var(--red-500);
+  box-shadow: 0 0 0 3px rgba(207, 102, 96, 0.2);
+}
+
+.test-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
 }
 
 /* ── Engineering review rows ── */
@@ -509,10 +929,65 @@
   background: var(--red-500);
 }
 
+/* ── Score drivers (provenance) ── */
+.driver-list {
+  margin: 2px 0 0;
+  padding: 8px 0 0;
+  list-style: none;
+  border-top: 1px dashed var(--border);
+  display: grid;
+  gap: 4px;
+}
+
+.driver-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.driver-label {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-500);
+}
+
+.driver-points {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.driver-points[data-direction='down'] {
+  color: var(--red-700);
+}
+
+.driver-points[data-direction='up'] {
+  color: var(--green-700);
+}
+
 /* ── Responsive ── */
 @media (max-width: 860px) {
-  .metric-grid {
+  .metric-grid,
+  .duo-grid {
     grid-template-columns: 1fr;
+  }
+
+  .stat {
+    flex-basis: 50%;
+  }
+
+  .stat + .stat {
+    border-left: 0;
+  }
+
+  .stat:nth-child(even) {
+    border-left: 1px solid var(--border);
+  }
+
+  .stat:nth-child(n + 3) {
+    border-top: 1px solid var(--border);
   }
 }
 
@@ -528,6 +1003,11 @@
 
   .badge {
     min-width: 72px;
+  }
+
+  /* On narrow screens the pill + chevron are enough */
+  .section-scorecell {
+    display: none;
   }
 
   .confidence-hero {

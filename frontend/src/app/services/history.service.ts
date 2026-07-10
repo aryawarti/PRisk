@@ -12,6 +12,8 @@ export interface HistoryEntry {
   timestamp: number;
   /** Score change vs. the previous analysis of the same PR, if any. */
   delta: number | null;
+  /** Full saved report so history opens instantly without re-running. */
+  report?: AnalysisResult;
 }
 
 const STORAGE_KEY = 'prisk.history.v1';
@@ -39,6 +41,7 @@ export class HistoryService {
       color: result.confidence_report.recommendation_color,
       timestamp: Date.now(),
       delta: previous ? result.confidence_report.score - previous.score : null,
+      report: result,
     };
 
     const next = [entry, ...this.entries().filter((e) => e.pr_url !== result.pr_url)].slice(
@@ -69,7 +72,14 @@ export class HistoryService {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
     } catch {
-      // Storage unavailable (private mode etc.) — history simply won't persist.
+      // Quota exceeded or storage unavailable — retry without the full
+      // reports so at least the score history survives.
+      try {
+        const slim = entries.map(({ report, ...rest }) => rest);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
+      } catch {
+        // Storage fully unavailable (private mode etc.) — skip persistence.
+      }
     }
   }
 }

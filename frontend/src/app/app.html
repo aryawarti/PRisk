@@ -90,9 +90,9 @@
             <button
               class="history-item"
               type="button"
-              (click)="rerun(entry)"
+              (click)="openHistory(entry)"
               [disabled]="state() === 'loading'"
-              [attr.title]="'Re-analyse ' + entry.pr_url"
+              [attr.title]="'Open saved report — ' + entry.pr_url"
             >
               <span class="history-score" [attr.data-tone]="entry.color">{{ entry.score }}</span>
               <span class="history-meta">
@@ -115,6 +115,25 @@
     </aside>
 
     <div class="results-panel" *ngIf="result() as report; else emptyState">
+      <div class="snapshot-bar" *ngIf="snapshotTime() as savedAt" role="status">
+        <span class="snapshot-text">
+          Saved snapshot from {{ timeAgo(savedAt) }} — the PR may have new commits since.
+        </span>
+        <button class="snapshot-action" type="button" (click)="analyse()">Re-analyse now</button>
+      </div>
+
+      <div
+        class="quality-banner"
+        *ngIf="report.analysis_quality && report.analysis_quality.mode !== 'full'"
+        [attr.data-mode]="report.analysis_quality.mode"
+        role="status"
+      >
+        <span class="quality-title">
+          {{ report.analysis_quality.mode === 'degraded' ? 'Heuristic analysis' : 'Partial AI analysis' }}
+        </span>
+        <span class="quality-note">{{ report.analysis_quality.note }}</span>
+      </div>
+
       <div class="results-header" [attr.data-tone]="report.confidence_report.recommendation_color">
         <div class="results-header-body">
           <div class="results-info-grid">

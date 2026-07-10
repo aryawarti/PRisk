@@ -146,7 +146,11 @@ def clone_repo(clone_url: str, token: str) -> Path:
         (clone_url + str(time.time())).encode()
     ).hexdigest()[:8]
 
-    git.Repo.clone_from(auth_url, folder, depth=1)  # depth=1 = fast shallow clone
+    # Shallow-but-not-single-commit clone: we need recent history for the
+    # historical risk evidence (hotfix/churn mining). 300 commits is enough
+    # signal for a 90-day window on most repos while staying fast.
+    depth = int(os.getenv("CLONE_DEPTH", "300"))
+    git.Repo.clone_from(auth_url, folder, depth=depth, single_branch=True)
     return folder
 
 
@@ -191,6 +195,107 @@ def read_directory_structure(repo_path: Path, max_depth: int = 3) -> str:
 
     walk(repo_path, 0)
     return "\n".join(lines[:200])          # cap at 200 lines
+
+
+# ── Historical risk mining ────────────────────────────────────────────────────
+
+# Commit messages that indicate a defect was being repaired.
+_FIX_PATTERN = re.compile(r"\b(fix(es|ed)?|hotfix|revert(s|ed)?|bug|patch(es|ed)?|regression)\b", re.IGNORECASE)
+
+
+def mine_history_risk(repo_path: Path, changed_files: list[str], max_commits: int = 300) -> dict:
+    """
+    Evidence-based risk: walk recent commit history and, for every file this
+    PR touches, count how often it changed and how often those changes were
+    fixes/reverts/hotfixes. A file that keeps needing fixes is empirically
+    risky to change — no LLM opinion required.
+
+    Note: history comes from the default branch of the clone, which is the
+    right baseline ("how has this file behaved in mainline so far").
+
+    Returns a dict:
+      {
+        "available": bool,
+        "window_commits": int,
+        "overall_level": "Low" | "Medium" | "High",
+        "hotspots": ["path", ...],           # files with repeated fix history
+        "files": [
+          {"path", "commits", "fix_commits", "last_modified_days", "authors"}
+        ],
+      }
+    """
+    try:
+        repo = git.Repo(repo_path)
+        raw = repo.git.log(
+            f"-{max_commits}",
+            "--name-only",
+            "--no-merges",
+            "--pretty=format:__COMMIT__%ct|%an|%s",
+        )
+    except Exception:
+        return {"available": False, "window_commits": 0, "overall_level": "Low", "hotspots": [], "files": []}
+
+    changed = set(changed_files)
+    stats: dict[str, dict] = {
+        path: {"commits": 0, "fix_commits": 0, "last_ts": 0, "authors": set()}
+        for path in changed
+    }
+
+    import time as _time
+
+    commit_count = 0
+    is_fix = False
+    author = ""
+    timestamp = 0
+
+    for line in raw.splitlines():
+        if line.startswith("__COMMIT__"):
+            commit_count += 1
+            try:
+                ts_str, author, subject = line[len("__COMMIT__"):].split("|", 2)
+                timestamp = int(ts_str)
+            except ValueError:
+                timestamp, author, subject = 0, "", ""
+            is_fix = bool(_FIX_PATTERN.search(subject))
+        elif line.strip() and line.strip() in changed:
+            entry = stats[line.strip()]
+            entry["commits"] += 1
+            if is_fix:
+                entry["fix_commits"] += 1
+            if author:
+                entry["authors"].add(author)
+            entry["last_ts"] = max(entry["last_ts"], timestamp)
+
+    now = _time.time()
+    files = []
+    for path, entry in stats.items():
+        if entry["commits"] == 0:
+            continue  # new file or renamed — no history to report
+        files.append({
+            "path": path,
+            "commits": entry["commits"],
+            "fix_commits": entry["fix_commits"],
+            "last_modified_days": max(0, int((now - entry["last_ts"]) / 86400)) if entry["last_ts"] else -1,
+            "authors": len(entry["authors"]),
+        })
+
+    files.sort(key=lambda f: (f["fix_commits"], f["commits"]), reverse=True)
+    hotspots = [f["path"] for f in files if f["fix_commits"] >= 2]
+
+    if hotspots:
+        overall = "High"
+    elif any(f["fix_commits"] >= 1 for f in files):
+        overall = "Medium"
+    else:
+        overall = "Low"
+
+    return {
+        "available": True,
+        "window_commits": commit_count,
+        "overall_level": overall,
+        "hotspots": hotspots,
+        "files": files[:20],
+    }
 
 
 def summarise_repository(structure: str, changed_files: list[str]) -> str:
@@ -260,13 +365,16 @@ def build_repository_context(pr_url: str, emit: Optional[EmitFn] = None) -> PRis
     file_count = len(pr_data["changed_files"])
     notify("diff", f"Reading diff — {file_count} changed file{'s' if file_count != 1 else ''}…")
 
-    # Step 3 & 4: Clone + read structure
+    # Step 3 & 4: Clone + read structure + mine history
     repo_summary = ""
+    history_risk = {"available": False, "window_commits": 0, "overall_level": "Low", "hotspots": [], "files": []}
     try:
         token = os.getenv("GITHUB_TOKEN", "")
         notify("clone", "Cloning repository for structural context…")
         repo_path = clone_repo(pr_data["clone_url"], token)
         structure = read_directory_structure(repo_path)
+        notify("history", "Mining commit history for risk evidence…")
+        history_risk = mine_history_risk(repo_path, pr_data["changed_files"])
         notify("summary", "Summarising the codebase…")
         repo_summary = summarise_repository(structure, pr_data["changed_files"])
     except Exception as e:
@@ -287,6 +395,7 @@ def build_repository_context(pr_url: str, emit: Optional[EmitFn] = None) -> PRis
         diff=pr_data["diff"],
         changed_files=pr_data["changed_files"],
         repo_summary=repo_summary,
+        history_risk=history_risk,
         pr_title=pr_data["title"],
         pr_description=pr_data["description"],
         author=pr_data["author"],

@@ -5,6 +5,30 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { API_BASE_URL } from '../api-config';
 
+export interface Finding {
+  text: string;
+  severity: 'Critical' | 'High' | 'Medium' | 'Low';
+  effort: string;
+}
+
+export interface PriorityTest {
+  text: string;
+  effort: string;
+}
+
+export interface ScoreDriver {
+  label: string;
+  points: number;
+}
+
+export interface HistoryFileStat {
+  path: string;
+  commits: number;
+  fix_commits: number;
+  last_modified_days: number;
+  authors: number;
+}
+
 export interface AnalysisResult {
   success: boolean;
   pr_url: string;
@@ -14,6 +38,19 @@ export interface AnalysisResult {
   name: string;
   repo_name: string;
   changed_files: string[];
+  history_risk: {
+    available: boolean;
+    window_commits: number;
+    overall_level: string;
+    hotspots: string[];
+    files: HistoryFileStat[];
+  };
+  analysis_quality: {
+    mode: 'full' | 'partial' | 'degraded';
+    degraded_agents: string[];
+    history_evidence: boolean;
+    note: string;
+  };
   change_analysis: {
     summary: string;
     change_type: string;
@@ -32,10 +69,10 @@ export interface AnalysisResult {
     estimated_downstream_services: number;
   };
   engineering_review: {
-    security: string[];
-    performance: string[];
-    maintainability: string[];
-    code_quality: string[];
+    security: Finding[];
+    performance: Finding[];
+    maintainability: Finding[];
+    code_quality: Finding[];
     overall_severity: string;
     total_issues_found: number;
     positive_notes: string[];
@@ -45,7 +82,7 @@ export interface AnalysisResult {
     edge_cases: string[];
     regression_risks: string[];
     recommended_test_types: string[];
-    priority_tests: string[];
+    priority_tests: PriorityTest[];
     test_coverage_assessment: string;
     total_tests_recommended: number;
   };
@@ -54,7 +91,13 @@ export interface AnalysisResult {
     recommendation: string;
     recommendation_color: 'green' | 'amber' | 'red';
     executive_summary: string;
-    errors_during_analysis: string[]; // ✅ add
+    errors_during_analysis: string[];
+    score_drivers: {
+      blast_radius: ScoreDriver[];
+      engineering: ScoreDriver[];
+      testing: ScoreDriver[];
+      complexity: ScoreDriver[];
+    }; // ✅ add
     input_levels: {
       // ✅ add
       blast_radius_level: string;

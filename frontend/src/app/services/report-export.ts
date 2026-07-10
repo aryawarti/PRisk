@@ -1,4 +1,4 @@
-import { AnalysisResult } from './analysis.service';
+import { AnalysisResult, Finding } from './analysis.service';
 
 /**
  * Renders the full analysis as GitHub-flavoured Markdown, ready to paste
@@ -12,14 +12,30 @@ export function buildMarkdownReport(r: AnalysisResult): string {
   const er = r.engineering_review;
   const ts = r.testing_strategy;
 
+  const hr = r.history_risk;
+
   const emoji = cr.recommendation_color === 'green' ? '🟢' : cr.recommendation_color === 'red' ? '🔴' : '🟡';
   const list = (items: string[], empty = '_None identified._') =>
     items?.length ? items.map((i) => `- ${i}`).join('\n') : empty;
+  const findingList = (items: Finding[]) =>
+    items?.length
+      ? items.map((f) => `- **[${f.severity}]** ${f.text} _(${f.effort})_`).join('\n')
+      : '';
+
+  const evidence =
+    hr?.available && hr.files.length
+      ? `\n### Historical risk evidence _(last ${hr.window_commits} commits)_\n\n${hr.files
+          .map(
+            (f) =>
+              `- \`${f.path}\` — ${f.fix_commits} fix/revert commit${f.fix_commits === 1 ? '' : 's'}, ${f.commits} total change${f.commits === 1 ? '' : 's'}${hr.hotspots.includes(f.path) ? ' — **⚠ hotspot**' : ''}`,
+          )
+          .join('\n')}\n`
+      : '';
 
   return `## ${emoji} PRisk Analysis — ${cr.score}/100 · ${cr.recommendation}
 
 **PR:** [${r.name || r.pr_title}](${r.pr_url}) · **Repo:** \`${r.repo_name}\` · **Author:** @${r.author}
-
+${r.analysis_quality && r.analysis_quality.mode !== 'full' ? `\n> ⚠️ **${r.analysis_quality.mode === 'degraded' ? 'Heuristic analysis' : 'Partial AI analysis'}:** ${r.analysis_quality.note}\n` : ''}
 > ${cr.executive_summary}
 
 ### Score breakdown
@@ -30,6 +46,19 @@ export function buildMarkdownReport(r: AnalysisResult): string {
 | Engineering | ${cr.breakdown.engineering_score}/${cr.breakdown.engineering_max} | ${cr.input_levels.engineering_severity} |
 | Testing | ${cr.breakdown.testing_score}/${cr.breakdown.testing_max} | ${cr.input_levels.testing_assessment} |
 | Complexity | ${cr.breakdown.complexity_score}/${cr.breakdown.complexity_max} | ${cr.input_levels.complexity} |
+
+<details>
+<summary>Why these scores (signal-level drivers)</summary>
+
+${(['blast_radius', 'engineering', 'testing', 'complexity'] as const)
+  .map((key) => {
+    const drivers = cr.score_drivers?.[key] ?? [];
+    if (!drivers.length) return '';
+    const title = key.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    return `**${title}**\n${drivers.map((d) => `- ${d.label}: ${d.points > 0 ? '+' : ''}${d.points}`).join('\n')}\n`;
+  })
+  .join('\n')}
+</details>
 
 ### What changed
 
@@ -47,13 +76,13 @@ ${br.reasoning}
 ${list(br.dependency_chain.map((c) => `\`${c}\``), '')}
 
 **User flows at risk:** ${br.user_flows_at_risk.join(', ') || '—'}
-
+${evidence}
 ### Engineering review — ${er.overall_severity} (${er.total_issues_found} issue${er.total_issues_found === 1 ? '' : 's'})
 
-${er.security.length ? `**Security**\n${list(er.security)}\n` : ''}${er.code_quality.length ? `**Code quality**\n${list(er.code_quality)}\n` : ''}${er.maintainability.length ? `**Maintainability**\n${list(er.maintainability)}\n` : ''}${er.performance.length ? `**Performance**\n${list(er.performance)}\n` : ''}${!er.total_issues_found ? '_No material issues found._\n' : ''}
+${er.security.length ? `**Security**\n${findingList(er.security)}\n` : ''}${er.code_quality.length ? `**Code quality**\n${findingList(er.code_quality)}\n` : ''}${er.maintainability.length ? `**Maintainability**\n${findingList(er.maintainability)}\n` : ''}${er.performance.length ? `**Performance**\n${findingList(er.performance)}\n` : ''}${!er.total_issues_found ? '_No material issues found._\n' : ''}
 ### Tests to add before merge — ${ts.test_coverage_assessment}
 
-${list(ts.priority_tests.map((t, i) => `**P${i + 1}.** ${t}`))}
+${list(ts.priority_tests.map((t, i) => `**P${i + 1}.** ${t.text} _(${t.effort})_`))}
 
 <details>
 <summary>All recommended tests (${ts.total_tests_recommended})</summary>

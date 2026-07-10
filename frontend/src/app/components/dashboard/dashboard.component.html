@@ -39,6 +39,18 @@
 
       <div class="section-meta">
         <span class="badge" [attr.data-tone]="section.tone">{{ section.badge }}</span>
+        <div class="section-scorecell" aria-hidden="false">
+          <span class="section-points">
+            {{ section.score }}<span class="section-points-max">/{{ section.max }}</span>
+          </span>
+          <div class="mini-track">
+            <div
+              class="mini-fill"
+              [style.width.%]="(section.score / section.max) * 100"
+              [attr.data-tone]="getProgressTone(section.score, section.max)"
+            ></div>
+          </div>
+        </div>
         <span class="chevron" [class.open]="isExpanded(section.key)"></span>
       </div>
     </button>
@@ -47,86 +59,107 @@
       <ng-container [ngSwitch]="section.key">
         <!-- ======= CHANGE ======= -->
         <div *ngSwitchCase="'change'" class="panel-grid">
-          <div class="content-block">
-            <p class="label">Summary</p>
-            <p class="body-copy">{{ result.change_analysis.summary }}</p>
-          </div>
-
-          <div class="content-block">
-            <p class="label">Affected Module</p>
-            <div class="token-row">
-              <span class="token" *ngFor="let module of affectedModules">
-                {{ module }}
-              </span>
+          <div class="stat-strip">
+            <div class="stat">
+              <p class="label">Change Type</p>
+              <p class="stat-value">{{ result.change_analysis.change_type }}</p>
+            </div>
+            <div class="stat">
+              <p class="label">Lines Changed</p>
+              <p class="stat-value">{{ result.change_analysis.estimated_lines_changed }}</p>
+            </div>
+            <div class="stat">
+              <p class="label">Complexity</p>
+              <p class="stat-value">{{ result.change_analysis.complexity }}</p>
+            </div>
+            <div class="stat">
+              <p class="label">Files</p>
+              <p class="stat-value">{{ result.changed_files.length || '—' }}</p>
             </div>
           </div>
 
-          <div class="content-block">
-            <p class="label">Key Changes</p>
-            <ul class="plain-list">
+          <p class="lede">{{ result.change_analysis.summary }}</p>
+
+          <div class="duo-grid">
+            <div class="content-block">
+              <p class="label">Affected Modules</p>
+              <div class="token-row">
+                <span class="token" *ngFor="let module of affectedModules">
+                  {{ module }}
+                </span>
+              </div>
+            </div>
+
+            <div class="content-block">
+              <p class="label">Business Impact</p>
+              <p class="body-copy">{{ result.change_analysis.business_impact }}</p>
+            </div>
+          </div>
+
+          <div class="content-block" *ngIf="result.change_analysis.key_changes.length">
+            <p class="label">
+              Key Changes <span class="label-count">{{ result.change_analysis.key_changes.length }}</span>
+            </p>
+            <ul class="accent-list">
               <li *ngFor="let change of result.change_analysis.key_changes">{{ change }}</li>
             </ul>
-          </div>
-
-          <div class="content-block">
-            <p class="label">Business Impact</p>
-            <p class="body-copy">{{ result.change_analysis.business_impact }}</p>
-          </div>
-
-          <div class="metric-grid">
-            <div class="metric-card">
-              <p class="label">Change Type</p>
-              <p class="metric-value">{{ result.change_analysis.change_type }}</p>
-            </div>
-
-            <div class="metric-card">
-              <p class="label">Estimated Lines Changed</p>
-              <p class="metric-value">{{ result.change_analysis.estimated_lines_changed }}</p>
-            </div>
-
-            <div class="metric-card">
-              <p class="label">Complexity</p>
-              <p class="metric-value">{{ result.change_analysis.complexity }}</p>
-            </div>
           </div>
         </div>
 
         <!-- ======= BLAST ======= -->
         <div *ngSwitchCase="'blast'" class="panel-grid">
-          <div class="metric-grid">
-            <div class="metric-card">
+          <div class="stat-strip">
+            <div class="stat">
               <p class="label">Impact Level</p>
-              <p class="metric-value">{{ result.blast_radius.impact_level }}</p>
+              <p class="stat-value">{{ result.blast_radius.impact_level }}</p>
             </div>
-
-            <div class="metric-card">
+            <div class="stat">
               <p class="label">Downstream Services</p>
-              <p class="metric-value">{{ result.blast_radius.estimated_downstream_services }}</p>
+              <p class="stat-value">{{ result.blast_radius.estimated_downstream_services }}</p>
+            </div>
+            <div class="stat">
+              <p class="label">Modules at Risk</p>
+              <p class="stat-value">{{ result.blast_radius.affected_modules.length }}</p>
+            </div>
+            <div class="stat">
+              <p class="label">User Flows</p>
+              <p class="stat-value">{{ result.blast_radius.user_flows_at_risk.length }}</p>
             </div>
           </div>
 
-          <div class="content-block">
-            <p class="label">Potentially Impacted Modules</p>
-            <div class="token-row">
-              <span class="token" *ngFor="let module of result.blast_radius.affected_modules">
-                {{ module }}
-              </span>
+          <div class="content-block" *ngIf="dependencyChains.length">
+            <p class="label">Dependency Chains</p>
+            <div class="chain-row" *ngFor="let chain of dependencyChains">
+              <ng-container *ngFor="let node of chain; let last = last">
+                <span class="chain-node">{{ node }}</span>
+                <span class="chain-arrow" *ngIf="!last" aria-hidden="true">→</span>
+              </ng-container>
             </div>
           </div>
 
-          <div class="content-block">
-            <p class="label">Dependency Chain</p>
-            <ul class="plain-list">
-              <li *ngFor="let chain of result.blast_radius.dependency_chain">{{ chain }}</li>
-            </ul>
-          </div>
+          <div class="duo-grid">
+            <div class="content-block">
+              <p class="label">
+                Potentially Impacted Modules
+                <span class="label-count">{{ result.blast_radius.affected_modules.length }}</span>
+              </p>
+              <div class="token-row">
+                <span class="token" *ngFor="let module of result.blast_radius.affected_modules">
+                  {{ module }}
+                </span>
+              </div>
+            </div>
 
-          <div class="content-block">
-            <p class="label">User Flows at Risk</p>
-            <div class="token-row">
-              <span class="token" *ngFor="let flow of result.blast_radius.user_flows_at_risk">
-                {{ flow }}
-              </span>
+            <div class="content-block">
+              <p class="label">
+                User Flows at Risk
+                <span class="label-count">{{ result.blast_radius.user_flows_at_risk.length }}</span>
+              </p>
+              <div class="token-row">
+                <span class="token" *ngFor="let flow of result.blast_radius.user_flows_at_risk">
+                  {{ flow }}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -137,10 +170,37 @@
                 <span class="file-pin" aria-hidden="true"></span>
                 <code class="file-path">{{ file.path }}</code>
                 <span class="file-tag" *ngIf="file.risk === 'epicenter'">Epicenter</span>
+                <span class="file-tag file-tag-hotspot" *ngIf="file.risk === 'hotspot'">Hotspot</span>
               </li>
             </ul>
             <p class="file-hint">
-              Epicenter files match modules in the blast radius — review these first.
+              Hotspot = repeated fix history in git. Epicenter = matches a blast-radius module.
+              Review these first.
+            </p>
+          </div>
+
+          <div class="content-block" *ngIf="historyAvailable">
+            <p class="label">
+              Historical Risk Evidence
+              <span class="label-detail">last {{ result.history_risk.window_commits }} commits</span>
+            </p>
+            <ul class="history-evidence">
+              <li class="evidence-row" *ngFor="let file of historyFiles" [attr.data-hot]="isHotspot(file.path)">
+                <code class="file-path">{{ file.path }}</code>
+                <span class="evidence-stats">
+                  <span class="evidence-stat" [class.evidence-alert]="file.fix_commits > 0">
+                    {{ file.fix_commits }} fix{{ file.fix_commits === 1 ? '' : 'es' }}/revert{{ file.fix_commits === 1 ? '' : 's' }}
+                  </span>
+                  <span class="evidence-stat">{{ file.commits }} change{{ file.commits === 1 ? '' : 's' }}</span>
+                  <span class="evidence-stat" *ngIf="file.last_modified_days >= 0">
+                    touched {{ file.last_modified_days === 0 ? 'today' : file.last_modified_days + 'd ago' }}
+                  </span>
+                </span>
+              </li>
+            </ul>
+            <p class="file-hint">
+              Files that repeatedly needed fixes are empirically fragile — this evidence comes
+              from the repository's own commit history, not model opinion.
             </p>
           </div>
 
@@ -152,38 +212,66 @@
 
         <!-- ======= ENGINEERING ======= -->
         <div *ngSwitchCase="'engineering'" class="panel-grid">
-          <div class="review-row" *ngFor="let category of engineeringCategories">
-            <div class="review-header">
-              <div>
-                <p class="review-title">{{ category.label }}</p>
-                <p class="review-summary">{{ category.summary }}</p>
-              </div>
+          <div class="stat-strip">
+            <div class="stat">
+              <p class="label">Overall Severity</p>
+              <p class="stat-value">{{ result.engineering_review.overall_severity }}</p>
+            </div>
+            <div class="stat">
+              <p class="label">Issues Found</p>
+              <p class="stat-value">{{ result.engineering_review.total_issues_found }}</p>
+            </div>
+            <div class="stat">
+              <p class="label">Categories Clear</p>
+              <p class="stat-value">{{ clearCategories.length }}/4</p>
+            </div>
+          </div>
 
-              <span class="badge" [attr.data-tone]="category.tone === 'clear' ? 'green' : 'amber'">
-                {{ category.tone === 'clear' ? 'Clear' : 'Review' }}
+          <!-- Findings grouped by severity, worst first -->
+          <div class="severity-group" *ngFor="let group of severityGroups">
+            <div class="severity-heading">
+              <span class="severity-chip" [attr.data-severity]="group.severity">
+                {{ group.severity }}
+              </span>
+              <span class="severity-count">
+                {{ group.findings.length }} finding{{ group.findings.length === 1 ? '' : 's' }}
               </span>
             </div>
 
-            <ul class="plain-list compact" *ngIf="category.findings.length">
-              <li *ngFor="let finding of category.findings">{{ finding }}</li>
-            </ul>
-          </div>
-
-          <div class="metric-grid">
-            <div class="metric-card">
-              <p class="label">Overall Severity</p>
-              <p class="metric-value">{{ result.engineering_review.overall_severity }}</p>
-            </div>
-
-            <div class="metric-card">
-              <p class="label">Issues Found</p>
-              <p class="metric-value">{{ result.engineering_review.total_issues_found }}</p>
+            <div class="finding-card" *ngFor="let finding of group.findings" [attr.data-severity]="group.severity">
+              <p class="finding-text">{{ finding.text }}</p>
+              <div class="finding-tags">
+                <span class="finding-category">{{ finding.category }}</span>
+                <span class="finding-effort" [attr.data-effort]="finding.effort">{{ finding.effort }}</span>
+              </div>
             </div>
           </div>
 
-          <div class="content-block" *ngIf="result.engineering_review.positive_notes?.length">
-            <p class="label">Positive Notes</p>
-            <ul class="plain-list">
+          <!-- No findings at all -->
+          <div class="content-block all-clear" *ngIf="!severityGroups.length">
+            <p class="all-clear-title">No issues found</p>
+            <p class="review-summary">
+              The review found no material problems across security, code quality,
+              maintainability, or performance.
+            </p>
+          </div>
+
+          <!-- Categories that came back clean -->
+          <div class="content-block" *ngIf="severityGroups.length && clearCategories.length">
+            <p class="label">Clear Categories</p>
+            <div class="token-row">
+              <span class="token token-clear" *ngFor="let category of clearCategories">
+                ✓ {{ category }}
+              </span>
+            </div>
+          </div>
+
+          <div class="content-block positive-block" *ngIf="result.engineering_review.positive_notes?.length">
+            <p class="label">
+              What Was Done Well
+              <span class="label-count">{{ result.engineering_review.positive_notes.length }}</span>
+            </p>
+            <ul class="accent-list positive-list">
               <li *ngFor="let note of result.engineering_review.positive_notes">{{ note }}</li>
             </ul>
           </div>
@@ -191,60 +279,70 @@
 
         <!-- ======= TESTING ======= -->
         <div *ngSwitchCase="'testing'" class="panel-grid">
-          <div class="metric-grid">
-            <div class="metric-card">
+          <div class="stat-strip">
+            <div class="stat">
               <p class="label">Coverage Assessment</p>
-              <p class="metric-value">{{ result.testing_strategy.test_coverage_assessment }}</p>
+              <p class="stat-value">{{ result.testing_strategy.test_coverage_assessment }}</p>
             </div>
-
-            <div class="metric-card">
-              <p class="label">Total Tests Recommended</p>
-              <p class="metric-value">{{ result.testing_strategy.total_tests_recommended }}</p>
+            <div class="stat">
+              <p class="label">Tests Recommended</p>
+              <p class="stat-value">{{ result.testing_strategy.total_tests_recommended }}</p>
             </div>
-          </div>
-
-          <div class="content-block" *ngIf="result.testing_strategy.recommended_test_types?.length">
-            <p class="label">Recommended Test Types</p>
-            <div class="token-row">
-              <span
-                class="token"
-                *ngFor="let type of result.testing_strategy.recommended_test_types"
-              >
-                {{ type }}
-              </span>
+            <div class="stat" *ngIf="result.testing_strategy.recommended_test_types?.length">
+              <p class="label">Test Types</p>
+              <div class="token-row stat-tokens">
+                <span
+                  class="token token-small"
+                  *ngFor="let type of result.testing_strategy.recommended_test_types"
+                >
+                  {{ type }}
+                </span>
+              </div>
             </div>
           </div>
 
           <div class="content-block" *ngIf="result.testing_strategy.priority_tests?.length">
-            <p class="label">Priority Tests</p>
+            <p class="label">Write These First</p>
             <div
               class="test-plan"
               *ngFor="let test of result.testing_strategy.priority_tests; let index = index"
             >
               <div class="test-index">{{ index + 1 }}</div>
-              <div>
-                <p class="test-name">{{ test }}</p>
+              <div class="test-body">
+                <p class="test-name">{{ test.text }}</p>
+                <span class="finding-effort" [attr.data-effort]="test.effort">{{ test.effort }}</span>
               </div>
             </div>
           </div>
 
-          <div class="content-block" *ngIf="result.testing_strategy.missing_tests?.length">
-            <p class="label">Missing Tests</p>
-            <ul class="plain-list">
-              <li *ngFor="let test of result.testing_strategy.missing_tests">{{ test }}</li>
-            </ul>
-          </div>
+          <div class="duo-grid">
+            <div class="content-block" *ngIf="result.testing_strategy.missing_tests?.length">
+              <p class="label">
+                Missing Tests
+                <span class="label-count">{{ result.testing_strategy.missing_tests.length }}</span>
+              </p>
+              <ul class="accent-list">
+                <li *ngFor="let test of result.testing_strategy.missing_tests">{{ test }}</li>
+              </ul>
+            </div>
 
-          <div class="content-block" *ngIf="result.testing_strategy.edge_cases?.length">
-            <p class="label">Edge Cases</p>
-            <ul class="plain-list">
-              <li *ngFor="let edge of result.testing_strategy.edge_cases">{{ edge }}</li>
-            </ul>
+            <div class="content-block" *ngIf="result.testing_strategy.edge_cases?.length">
+              <p class="label">
+                Edge Cases
+                <span class="label-count">{{ result.testing_strategy.edge_cases.length }}</span>
+              </p>
+              <ul class="accent-list">
+                <li *ngFor="let edge of result.testing_strategy.edge_cases">{{ edge }}</li>
+              </ul>
+            </div>
           </div>
 
           <div class="content-block" *ngIf="result.testing_strategy.regression_risks?.length">
-            <p class="label">Regression Risks</p>
-            <ul class="plain-list">
+            <p class="label">
+              Regression Risks
+              <span class="label-count">{{ result.testing_strategy.regression_risks.length }}</span>
+            </p>
+            <ul class="accent-list">
               <li *ngFor="let risk of result.testing_strategy.regression_risks">{{ risk }}</li>
             </ul>
           </div>
@@ -288,6 +386,15 @@
               <span class="badge" [attr.data-tone]="getInputLevelTone(item.label)">
                 {{ getInputLevel(item.label) }}
               </span>
+
+              <ul class="driver-list" *ngIf="driversFor(item.label).length">
+                <li class="driver-row" *ngFor="let driver of driversFor(item.label)">
+                  <span class="driver-label">{{ driver.label }}</span>
+                  <span class="driver-points" [attr.data-direction]="driver.points > 0 ? 'up' : 'down'">
+                    {{ driver.points > 0 ? '+' : '' }}{{ driver.points }}
+                  </span>
+                </li>
+              </ul>
             </div>
           </div>
 
