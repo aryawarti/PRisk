@@ -47,11 +47,82 @@
   --shadow-2: 0 1px 2px rgba(13, 27, 36, 0.05), 0 6px 20px rgba(13, 27, 36, 0.06);
   --shadow-3: 0 2px 4px rgba(13, 27, 36, 0.06), 0 14px 36px rgba(13, 27, 36, 0.1);
 
+  /* Component tokens (theme-dependent) */
+  --track: #edf2f5;
+  --skeleton-hi: #f7fafb;
+  --skeleton-lo: #edf2f5;
+  --input-disabled-bg: #f1f5f7;
+  --card-overlay: rgba(255, 255, 255, 0.75);
+  --gauge-track: rgba(13, 27, 36, 0.08);
+  --action: #386b75;
+  --action-deep: #2f5a63;
+  --action-deeper: #24474e;
+  --critical: #8d3530;
+
   /* Shape & motion */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color-scheme: light;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Dark theme — same teal identity on deep blue-gray surfaces.
+   Applied via <html data-theme="dark">; default follows system.
+   ───────────────────────────────────────────────────────────── */
+[data-theme='dark'] {
+  --ink-900: #e9eff3;
+  --ink-700: #c6d2da;
+  --ink-500: #97a8b3;
+  --ink-400: #7e909b;
+  --ink-300: #61737e;
+
+  --brand-900: #cfe5e1;
+  --brand-700: #8fc0ba;
+  --brand-600: #79b0aa;
+  --brand-500: #67a19b;
+  --brand-100: #2b444a;
+  --brand-050: #1c2c31;
+
+  --bg: #0e1519;
+  --surface: #161f25;
+  --surface-2: #1b262d;
+  --border: #27343c;
+  --border-strong: #35454f;
+
+  --green-700: #85d6b8;
+  --green-500: #46a586;
+  --green-100: #17302a;
+  --green-border: #2e5849;
+
+  --amber-700: #e6c06a;
+  --amber-500: #d9a323;
+  --amber-100: #322a12;
+  --amber-border: #5a4a1e;
+
+  --red-700: #eb9a92;
+  --red-500: #cf6660;
+  --red-100: #3a201d;
+  --red-border: #5f3531;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-3: 0 2px 4px rgba(0, 0, 0, 0.45), 0 14px 36px rgba(0, 0, 0, 0.5);
+
+  --track: #223038;
+  --skeleton-hi: #1b262d;
+  --skeleton-lo: #223039;
+  --input-disabled-bg: #131b20;
+  --card-overlay: rgba(10, 18, 22, 0.5);
+  --gauge-track: rgba(233, 239, 243, 0.1);
+  --action: #2f5f68;
+  --action-deep: #26525a;
+  --action-deeper: #1d4249;
+  --critical: #a4403a;
+
+  color-scheme: dark;
 }
 
 html,

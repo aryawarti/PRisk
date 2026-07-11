@@ -40,6 +40,10 @@ export class AppComponent {
   /** When viewing a saved snapshot from history: its capture timestamp. */
   readonly snapshotTime = signal<number | null>(null);
   readonly errorKind = signal<'url' | 'notfound' | 'llm' | 'generic'>('generic');
+  /** Theme is applied to <html> pre-boot by index.html; this mirrors it. */
+  readonly theme = signal<'light' | 'dark'>(
+    (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') ?? 'light',
+  );
 
   private static readonly PR_URL_PATTERN = /github\.com\/[^\/\s]+\/[^\/\s]+\/pull\/\d+/i;
 
@@ -189,6 +193,17 @@ export class AppComponent {
         return 'AI unavailable — no report generated';
       default:
         return 'Analysis failed';
+    }
+  }
+
+  toggleTheme(): void {
+    const next = this.theme() === 'dark' ? 'light' : 'dark';
+    this.theme.set(next);
+    document.documentElement.setAttribute('data-theme', next);
+    try {
+      localStorage.setItem('prisk.theme', next);
+    } catch {
+      // Storage unavailable — theme still applies for this session.
     }
   }
 

@@ -1,4 +1,13 @@
-# PRisk — Provable Blast Radius (v1.5.0)
+# PRisk — Dark Mode (v1.5.1)
+
+- **Full dark theme**, same teal identity on deep blue-gray surfaces (`#0e1519` base). One `[data-theme='dark']` token override — every component adapts automatically because the entire UI reads from CSS variables.
+- **Sun/moon toggle** in the header; choice persists in localStorage; first visit follows the OS `prefers-color-scheme`. An inline pre-boot script in `index.html` applies the theme before Angular loads, so there's no light-mode flash.
+- Remaining hardcoded colors migrated to tokens (`--track`, `--skeleton-*`, `--card-overlay`, `--gauge-track`, `--action-*`, `--critical`) so meters, skeletons, the gauge ring, primary buttons, and the Critical chip all render correctly in both themes. `color-scheme` set per theme so native scrollbars/inputs match.
+- Note: final compile check for this round was reviewed manually (sandbox disk full); run `ng build` locally before deploying.
+
+---
+
+# Provable Blast Radius (v1.5.0)
 
 The moat. Every competitor's dependency claim is an LLM opinion — PRisk now **measures** it.
 
