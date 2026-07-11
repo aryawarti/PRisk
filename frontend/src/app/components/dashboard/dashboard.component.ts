@@ -42,6 +42,16 @@ interface FileRiskView {
 
 const SEVERITY_ORDER: SeverityGroup['severity'][] = ['Critical', 'High', 'Medium', 'Low'];
 
+const SEVERITY_RANK: Record<string, number> = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+
+interface ActionItem {
+  text: string;
+  /** Estimated points recoverable (honest: derived from the dimension's current deficit). */
+  impact: number;
+  tag: string;
+  kind: 'test' | 'fix';
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -56,46 +66,52 @@ export class DashboardComponent {
   expandedSection: DashboardSectionKey | null = null;
 
   get sections(): DashboardSection[] {
-    const breakdown = this.result.confidence_report.breakdown;
+    // Defensive: never let a missing field in an old/partial payload
+    // crash the render — degrade to zeros and dashes instead.
+    const breakdown = this.result?.confidence_report?.breakdown;
+    const complexity = this.result?.change_analysis?.complexity ?? '—';
+    const impact = this.result?.blast_radius?.impact_level ?? '—';
+    const severity = this.result?.engineering_review?.overall_severity ?? '—';
+    const coverage = this.result?.testing_strategy?.test_coverage_assessment ?? '—';
     return [
       {
         key: 'change',
         title: 'Change Understanding',
-        badge: `${this.result.change_analysis.complexity} complexity`,
-        tone: this.toneFromValue(this.result.change_analysis.complexity),
-        score: breakdown.complexity_score,
-        max: breakdown.complexity_max,
+        badge: `${complexity} complexity`,
+        tone: this.toneFromValue(complexity),
+        score: breakdown?.complexity_score ?? 0,
+        max: breakdown?.complexity_max ?? 10,
       },
       {
         key: 'blast',
         title: 'Blast Radius Analysis',
-        badge: `${this.result.blast_radius.impact_level} impact`,
-        tone: this.toneFromValue(this.result.blast_radius.impact_level),
-        score: breakdown.blast_radius_score,
-        max: breakdown.blast_radius_max,
+        badge: `${impact} impact`,
+        tone: this.toneFromValue(impact),
+        score: breakdown?.blast_radius_score ?? 0,
+        max: breakdown?.blast_radius_max ?? 40,
       },
       {
         key: 'engineering',
         title: 'Engineering Review',
-        badge: `${this.result.engineering_review.overall_severity} severity`,
-        tone: this.toneFromValue(this.result.engineering_review.overall_severity),
-        score: breakdown.engineering_score,
-        max: breakdown.engineering_max,
+        badge: `${severity} severity`,
+        tone: this.toneFromValue(severity),
+        score: breakdown?.engineering_score ?? 0,
+        max: breakdown?.engineering_max ?? 30,
       },
       {
         key: 'testing',
         title: 'Testing Strategy',
-        badge: this.result.testing_strategy.test_coverage_assessment,
-        tone: this.toneFromValue(this.result.testing_strategy.test_coverage_assessment),
-        score: breakdown.testing_score,
-        max: breakdown.testing_max,
+        badge: coverage,
+        tone: this.toneFromValue(coverage),
+        score: breakdown?.testing_score ?? 0,
+        max: breakdown?.testing_max ?? 20,
       },
       {
         key: 'confidence',
         title: 'Merge Confidence',
-        badge: this.result.confidence_report.recommendation,
-        tone: this.result.confidence_report.recommendation_color,
-        score: this.result.confidence_report.score,
+        badge: this.result?.confidence_report?.recommendation ?? '—',
+        tone: this.result?.confidence_report?.recommendation_color ?? 'amber',
+        score: this.result?.confidence_report?.score ?? 0,
         max: 100,
       },
     ];
@@ -124,6 +140,62 @@ export class DashboardComponent {
       const isEpicenter = moduleTokens.some((token) => flattened.includes(token));
       return { path, risk: isEpicenter ? ('epicenter' as const) : ('standard' as const) };
     });
+  }
+
+  /** The three signals that moved the score most — shown before anything else. */
+  get topDrivers(): ScoreDriver[] {
+    const drivers = this.result?.confidence_report?.score_drivers;
+    if (!drivers) return [];
+    return [
+      ...(drivers.blast_radius ?? []),
+      ...(drivers.engineering ?? []),
+      ...(drivers.testing ?? []),
+      ...(drivers.complexity ?? []),
+    ]
+      .slice()
+      .sort((a, b) => Math.abs(b.points) - Math.abs(a.points))
+      .slice(0, 3);
+  }
+
+  /**
+   * "Do these first" — ranked, concrete actions with estimated score impact.
+   * Impact estimates split the related dimension's current point deficit
+   * across its actions, so they are grounded in the real breakdown.
+   */
+  get actionPlan(): ActionItem[] {
+    const breakdown = this.result?.confidence_report?.breakdown;
+    if (!breakdown) return [];
+    const actions: ActionItem[] = [];
+
+    const testDeficit = Math.max(0, (breakdown.testing_max ?? 20) - (breakdown.testing_score ?? 0));
+    // Old payloads had priority_tests as plain strings — accept both shapes.
+    const rawTests = (this.result?.testing_strategy?.priority_tests ?? []).slice(0, 3);
+    const tests = rawTests
+      .map((t) => (typeof t === 'string' ? { text: t, effort: 'Medium' } : t))
+      .filter((t) => !!t?.text);
+    const testShare = tests.length && testDeficit ? Math.max(1, Math.round(testDeficit / tests.length)) : 0;
+    for (const test of tests) {
+      actions.push({ text: test.text, impact: testShare, tag: test.effort, kind: 'test' });
+    }
+
+    const engDeficit = Math.max(0, (breakdown.engineering_max ?? 30) - (breakdown.engineering_score ?? 0));
+    const er = this.result?.engineering_review ?? ({} as AnalysisResult['engineering_review']);
+    const findings = [
+      ...(er.security ?? []),
+      ...(er.code_quality ?? []),
+      ...(er.maintainability ?? []),
+      ...(er.performance ?? []),
+    ]
+      .filter((f) => !!f && typeof f === 'object' && !!f.text)
+      .filter((f) => f.severity === 'Critical' || f.severity === 'High' || f.effort === 'Quick fix')
+      .sort((a, b) => (SEVERITY_RANK[a.severity] ?? 4) - (SEVERITY_RANK[b.severity] ?? 4))
+      .slice(0, 3);
+    const fixShare = findings.length && engDeficit ? Math.max(1, Math.round(engDeficit / findings.length)) : 0;
+    for (const finding of findings) {
+      actions.push({ text: finding.text, impact: fixShare, tag: finding.severity, kind: 'fix' });
+    }
+
+    return actions.sort((a, b) => b.impact - a.impact).slice(0, 5);
   }
 
   /** Measured import edges, grouped by the changed file they point at. */
@@ -212,7 +284,8 @@ export class DashboardComponent {
   }
 
   get scoreBreakdownItems() {
-    const breakdown = this.result.confidence_report.breakdown;
+    const breakdown = this.result?.confidence_report?.breakdown;
+    if (!breakdown) return [];
     return [
       {
         label: 'Blast Radius',
@@ -281,12 +354,13 @@ export class DashboardComponent {
 }
 
 getInputLevel(label: string): string {
-  const levels = this.result.confidence_report.input_levels;
+  const levels = this.result?.confidence_report?.input_levels;
+  if (!levels) return '';
   switch (label) {
-    case 'Blast Radius': return levels.blast_radius_level;
-    case 'Engineering':  return levels.engineering_severity;
-    case 'Testing':      return levels.testing_assessment;
-    case 'Complexity':   return levels.complexity;
+    case 'Blast Radius': return levels.blast_radius_level ?? '';
+    case 'Engineering':  return levels.engineering_severity ?? '';
+    case 'Testing':      return levels.testing_assessment ?? '';
+    case 'Complexity':   return levels.complexity ?? '';
     default:             return '';
   }
 }

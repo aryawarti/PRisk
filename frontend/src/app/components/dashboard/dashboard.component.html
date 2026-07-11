@@ -1,4 +1,104 @@
 <div class="dashboard">
+  <!-- ═══ DECIDE: why this score, before anything else ═══ -->
+  <section class="zone zone-decide" *ngIf="topDrivers.length">
+    <p class="zone-label">Why this score</p>
+    <div class="decide-grid">
+      <div
+        class="decide-driver"
+        *ngFor="let driver of topDrivers"
+        [attr.data-direction]="driver.points > 0 ? 'up' : 'down'"
+      >
+        <span class="decide-points">{{ driver.points > 0 ? '+' : '' }}{{ driver.points }}</span>
+        <span class="decide-text">{{ driver.label }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ PROVE: the evidence, never collapsed ═══ -->
+  <section class="zone zone-prove" *ngIf="measuredDependents.length || graphScanned || historyAvailable || fileRisks.length">
+    <p class="zone-label">Evidence</p>
+
+    <div class="content-block evidence-measured" *ngIf="measuredDependents.length">
+      <p class="label">Measured Dependents <span class="proof-tag">Proven from imports</span></p>
+      <div class="dependent-group" *ngFor="let group of measuredDependents">
+        <p class="dependent-target">
+          Files importing <code class="inline-code" [attr.title]="group.changedFile">{{ group.changedFile }}</code>
+        </p>
+        <div class="citation" *ngFor="let edge of group.edges">
+          <span class="citation-loc" [attr.title]="edge.from_file">{{ edge.from_file }}:{{ edge.line }}</span>
+          <code class="citation-code" [attr.title]="edge.code">{{ edge.code }}</code>
+        </div>
+      </div>
+      <p class="file-hint">Parsed from real import statements in the repository — not AI inference.</p>
+    </div>
+
+    <div class="content-block evidence-clear" *ngIf="graphScanned && !measuredDependents.length">
+      <p class="label">Measured Dependents <span class="proof-tag">Proven from imports</span></p>
+      <p class="body-copy">
+        Import scan found no files depending on the changed code
+        ({{ result.dependency_evidence.files_scanned }} source files scanned).
+        Direct blast radius is measurably small.
+      </p>
+    </div>
+
+    <div class="content-block" *ngIf="fileRisks.length">
+      <p class="label">Changed Files — Risk Pins</p>
+      <ul class="file-list">
+        <li class="file-row" *ngFor="let file of fileRisks" [attr.data-risk]="file.risk">
+          <span class="file-pin" aria-hidden="true"></span>
+          <code class="file-path" [attr.title]="file.path">{{ file.path }}</code>
+          <span class="file-tag" *ngIf="file.risk === 'epicenter'">Epicenter</span>
+          <span class="file-tag file-tag-hotspot" *ngIf="file.risk === 'hotspot'">Hotspot</span>
+        </li>
+      </ul>
+      <p class="file-hint">
+        Hotspot = repeated fix history in git. Epicenter = matches a blast-radius module. Review these first.
+      </p>
+    </div>
+
+    <div class="content-block" *ngIf="historyAvailable">
+      <p class="label">
+        Historical Risk Evidence
+        <span class="label-detail">last {{ result.history_risk.window_commits }} commits</span>
+      </p>
+      <ul class="history-evidence">
+        <li class="evidence-row" *ngFor="let file of historyFiles" [attr.data-hot]="isHotspot(file.path)">
+          <code class="file-path" [attr.title]="file.path">{{ file.path }}</code>
+          <span class="evidence-stats">
+            <span class="evidence-stat" [class.evidence-alert]="file.fix_commits > 0">
+              {{ file.fix_commits }} fix{{ file.fix_commits === 1 ? '' : 'es' }}/revert{{ file.fix_commits === 1 ? '' : 's' }}
+            </span>
+            <span class="evidence-stat">{{ file.commits }} change{{ file.commits === 1 ? '' : 's' }}</span>
+            <span class="evidence-stat" *ngIf="file.last_modified_days >= 0">
+              touched {{ file.last_modified_days === 0 ? 'today' : file.last_modified_days + 'd ago' }}
+            </span>
+          </span>
+        </li>
+      </ul>
+      <p class="file-hint">
+        From the repository's own commit history, not model opinion.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ ACT: what to do first, with estimated score impact ═══ -->
+  <section class="zone zone-act" *ngIf="actionPlan.length">
+    <p class="zone-label">Do these first</p>
+    <div class="action-row" *ngFor="let action of actionPlan; let index = index">
+      <span class="action-index">{{ index + 1 }}</span>
+      <p class="action-text">{{ action.text }}</p>
+      <span class="action-meta">
+        <span class="action-tag" [attr.data-kind]="action.kind">{{ action.tag }}</span>
+        <span class="action-impact" *ngIf="action.impact > 0">≈ +{{ action.impact }} pts</span>
+      </span>
+    </div>
+    <p class="file-hint">
+      Impact estimates split the points currently lost in the related score dimension.
+    </p>
+  </section>
+
+  <p class="full-report-heading">Full report</p>
+
   <section class="section-card" *ngFor="let section of sections">
     <button
       class="section-card-header"
@@ -127,38 +227,6 @@
             </div>
           </div>
 
-          <!-- MEASURED evidence: actual import statements, with citations -->
-          <div class="content-block evidence-measured" *ngIf="measuredDependents.length">
-            <p class="label">
-              Measured Dependents
-              <span class="proof-tag">Proven from imports</span>
-            </p>
-            <div class="dependent-group" *ngFor="let group of measuredDependents">
-              <p class="dependent-target">
-                Files importing <code class="inline-code" [attr.title]="group.changedFile">{{ group.changedFile }}</code>
-              </p>
-              <div class="citation" *ngFor="let edge of group.edges">
-                <span class="citation-loc" [attr.title]="edge.from_file">{{ edge.from_file }}:{{ edge.line }}</span>
-                <code class="citation-code" [attr.title]="edge.code">{{ edge.code }}</code>
-              </div>
-            </div>
-            <p class="file-hint">
-              These edges are parsed from real import statements in the repository — not AI inference.
-            </p>
-          </div>
-
-          <div class="content-block evidence-clear" *ngIf="graphScanned && !measuredDependents.length">
-            <p class="label">
-              Measured Dependents
-              <span class="proof-tag">Proven from imports</span>
-            </p>
-            <p class="body-copy">
-              Import scan found no files depending on the changed code
-              ({{ result.dependency_evidence.files_scanned }} source files scanned).
-              Direct blast radius is measurably small.
-            </p>
-          </div>
-
           <div class="content-block" *ngIf="dependencyChains.length">
             <p class="label">
               Dependency Chains
@@ -196,47 +264,6 @@
                 </span>
               </div>
             </div>
-          </div>
-
-          <div class="content-block" *ngIf="fileRisks.length">
-            <p class="label">Changed Files — Risk Pins</p>
-            <ul class="file-list">
-              <li class="file-row" *ngFor="let file of fileRisks" [attr.data-risk]="file.risk">
-                <span class="file-pin" aria-hidden="true"></span>
-                <code class="file-path" [attr.title]="file.path">{{ file.path }}</code>
-                <span class="file-tag" *ngIf="file.risk === 'epicenter'">Epicenter</span>
-                <span class="file-tag file-tag-hotspot" *ngIf="file.risk === 'hotspot'">Hotspot</span>
-              </li>
-            </ul>
-            <p class="file-hint">
-              Hotspot = repeated fix history in git. Epicenter = matches a blast-radius module.
-              Review these first.
-            </p>
-          </div>
-
-          <div class="content-block" *ngIf="historyAvailable">
-            <p class="label">
-              Historical Risk Evidence
-              <span class="label-detail">last {{ result.history_risk.window_commits }} commits</span>
-            </p>
-            <ul class="history-evidence">
-              <li class="evidence-row" *ngFor="let file of historyFiles" [attr.data-hot]="isHotspot(file.path)">
-                <code class="file-path" [attr.title]="file.path">{{ file.path }}</code>
-                <span class="evidence-stats">
-                  <span class="evidence-stat" [class.evidence-alert]="file.fix_commits > 0">
-                    {{ file.fix_commits }} fix{{ file.fix_commits === 1 ? '' : 'es' }}/revert{{ file.fix_commits === 1 ? '' : 's' }}
-                  </span>
-                  <span class="evidence-stat">{{ file.commits }} change{{ file.commits === 1 ? '' : 's' }}</span>
-                  <span class="evidence-stat" *ngIf="file.last_modified_days >= 0">
-                    touched {{ file.last_modified_days === 0 ? 'today' : file.last_modified_days + 'd ago' }}
-                  </span>
-                </span>
-              </li>
-            </ul>
-            <p class="file-hint">
-              Files that repeatedly needed fixes are empirically fragile — this evidence comes
-              from the repository's own commit history, not model opinion.
-            </p>
           </div>
 
           <div class="content-block">

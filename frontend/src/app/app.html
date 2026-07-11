@@ -205,19 +205,22 @@
           </div>
 
           <div class="gauge" [attr.data-tone]="report.confidence_report.recommendation_color">
-            <svg viewBox="0 0 80 80" role="img" [attr.aria-label]="'Merge confidence ' + report.confidence_report.score + ' out of 100'">
-              <circle class="gauge-track" cx="40" cy="40" r="34" />
-              <circle
-                class="gauge-fill"
-                cx="40"
-                cy="40"
-                r="34"
-                [style.stroke-dashoffset]="gaugeOffset(report.confidence_report.score)"
-              />
-            </svg>
-            <div class="gauge-center">
-              <span class="gauge-value">{{ report.confidence_report.score }}</span>
-              <span class="gauge-unit">/100</span>
+            <span class="gauge-name">PRisk Score</span>
+            <div class="gauge-dial">
+              <svg viewBox="0 0 80 80" role="img" [attr.aria-label]="'PRisk Score ' + report.confidence_report.score + ' out of 100'">
+                <circle class="gauge-track" cx="40" cy="40" r="34" />
+                <circle
+                  class="gauge-fill"
+                  cx="40"
+                  cy="40"
+                  r="34"
+                  [style.stroke-dashoffset]="gaugeOffset(report.confidence_report.score)"
+                />
+              </svg>
+              <div class="gauge-center">
+                <span class="gauge-value">{{ report.confidence_report.score }}</span>
+                <span class="gauge-unit">/100</span>
+              </div>
             </div>
             <span class="gauge-recommendation">{{ report.confidence_report.recommendation }}</span>
           </div>
@@ -228,7 +231,7 @@
     </div>
 
     <ng-template #emptyState>
-      <div class="empty-panel" *ngIf="state() !== 'loading'; else loadingPanel">
+      <div class="empty-panel hero" *ngIf="state() !== 'loading'; else loadingPanel">
         <div class="empty-icon" aria-hidden="true">
           <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle class="pulse-ring" cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2" opacity="0.25" />
@@ -236,11 +239,38 @@
             <circle cx="24" cy="24" r="4" fill="currentColor" />
           </svg>
         </div>
-        <p class="panel-title">Waiting for analysis</p>
-        <p class="panel-copy">
-          Submit a pull request URL to run the five-agent review: change understanding, blast
-          radius, engineering review, testing strategy, and merge confidence.
+        <p class="hero-kicker">Merge with receipts</p>
+        <h2 class="hero-title">Know if a pull request is safe to merge — with proof, not vibes.</h2>
+        <p class="hero-sub">
+          PRisk scores every PR from 0–100 using your repository's own import graph and commit
+          history, then shows the exact evidence behind every point.
         </p>
+
+        <div class="hero-pillars">
+          <div class="hero-pillar">
+            <p class="hero-pillar-title">Measured</p>
+            <p class="hero-pillar-copy">
+              The files that import your changed code — cited by file and line, parsed from real
+              import statements.
+            </p>
+          </div>
+          <div class="hero-pillar">
+            <p class="hero-pillar-title">Remembered</p>
+            <p class="hero-pillar-copy">
+              Files with a history of fixes and reverts are flagged as hotspots — mined from your
+              own commits.
+            </p>
+          </div>
+          <div class="hero-pillar">
+            <p class="hero-pillar-title">Explained</p>
+            <p class="hero-pillar-copy">
+              Every point of the PRisk Score is traceable to a named signal. Nothing is a black
+              box — and nothing is ever guessed.
+            </p>
+          </div>
+        </div>
+
+        <p class="hero-cta">Paste a pull request URL to see it work — no signup.</p>
       </div>
 
       <ng-template #loadingPanel>

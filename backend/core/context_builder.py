@@ -337,7 +337,11 @@ Keep it factual. Do not pad. Output ONLY the summary text, nothing else."""
 
 # ── Public entry point ────────────────────────────────────────────────────────
 
-def build_repository_context(pr_url: str, emit: Optional[EmitFn] = None) -> PRiskState:
+def build_repository_context(
+    pr_url: str,
+    emit: Optional[EmitFn] = None,
+    pr_data: Optional[dict] = None,
+) -> PRiskState:
     """
     Main function called by the FastAPI endpoint.
     Returns a fully populated initial PRiskState ready for LangGraph.
@@ -361,14 +365,17 @@ def build_repository_context(pr_url: str, emit: Optional[EmitFn] = None) -> PRis
     errors: list[str] = []
     repo_path: Optional[Path] = None
 
-    # Step 1: Parse URL
-    notify("parse", "Validating pull request link…")
+    # Step 1: Parse URL (status only emitted if the endpoint didn't already)
+    if pr_data is None:
+        notify("parse", "Validating pull request link…")
     owner, repo_slug, pr_number = parse_pr_url(pr_url)
     repo_name = f"{owner}/{repo_slug}"
 
-    # Step 2: Fetch PR data from GitHub
-    notify("fetch", f"Fetching PR #{pr_number} from {repo_name}…")
-    pr_data = fetch_pr_data(owner, repo_slug, pr_number)
+    # Step 2: Fetch PR data from GitHub (skipped when the endpoint already
+    # fetched it for the per-commit cache check — no duplicate API call).
+    if pr_data is None:
+        notify("fetch", f"Fetching PR #{pr_number} from {repo_name}…")
+        pr_data = fetch_pr_data(owner, repo_slug, pr_number)
     file_count = len(pr_data["changed_files"])
     notify("diff", f"Reading diff — {file_count} changed file{'s' if file_count != 1 else ''}…")
 

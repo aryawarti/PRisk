@@ -1,4 +1,42 @@
-# PRisk — Dark Mode (v1.5.1)
+# PRisk — Tests, CI & Self-Protection (v1.7.0)
+
+The tool that recommends tests now has its own, and the open endpoint can no longer be drained.
+
+## Test suite (`backend/tests/`, 40+ assertions, no network/LLM needed)
+
+- `test_scoring.py` — determinism, score bounds, breakdown-sum consistency, monotonicity (worse impact ⇒ lower score), security-finding penalties, measured-dependents effects, hotspot penalties, tests-in-diff credit, recommendation bands, driver provenance.
+- `test_normalize.py` — every normalizer survives `None`/garbage; string-vs-object finding shapes; enum defaults; score clamping.
+- `test_dependency_graph.py` — synthetic multi-language repo: Python/Java/TS import detection with line citations, no false positives, self-imports excluded, soft failure.
+- `test_urls_and_secrets.py` — PR URL parsing accept/reject matrix; token scrubbing.
+- `test_payload_and_quality.py` — full response contract; analysis-quality modes.
+- `test_history_mining.py` — real temp git repo: fix-commit counting, hotspot flagging (skips if git absent).
+
+## CI (`.github/workflows/ci.yml`)
+
+- Every push/PR runs backend pytest (Python 3.12) + the frontend **production build** — the exact check Vercel runs, so budget/type errors are caught before deploy, and rounds I can't verify locally get verified automatically.
+
+## Self-protection
+
+- **Per-IP rate limit** on both analyse endpoints (default 10 analyses / 10 min; `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_SECONDS`). Friendly 429 with retry guidance; the UI shows "Taking a short breather" instead of a raw error.
+- **Per-commit cache**: same PR + same head SHA ⇒ instant cached report, zero LLM calls (default TTL 24h, `CACHE_TTL_SECONDS`, LRU 100 entries). A new push changes the SHA and naturally re-analyses. The stream emits "This commit was already analysed — returning the saved report…". The duplicate GitHub fetch was avoided by letting `build_repository_context` accept pre-fetched PR data.
+
+---
+
+# Decide → Prove → Act (v1.6.0)
+
+The report is no longer organized around the pipeline — it's organized around the decision.
+
+- **Decide**: a "Why this score" strip appears first — the three signals that moved the PRisk Score most, as cards with signed points (red = lost, green = earned). No drawer-opening required to understand the number.
+- **Prove**: the evidence — Measured Dependents citations, file risk pins, historical fix/revert records — is promoted out of the Blast Radius accordion to a permanent top-level "Evidence" zone that can never be collapsed. The product's moat is now the second thing every user sees.
+- **Act**: a "Do these first" ranked list — priority tests and Critical/High/quick-fix findings with **estimated score impact** ("≈ +4 pts"), honestly derived by splitting each dimension's current point deficit across its actions. This creates the loop: fix → re-analyse → score rises.
+- **Full report**: the original five sections remain, unchanged, under a labeled divider — depth for those who want it, no longer a prerequisite for understanding.
+- **Named metric**: the gauge is now titled "PRisk Score" and the Markdown export leads with `PRisk Score: N/100` — the string that spreads in PR threads.
+- **Landing story**: the idle state is now a hero — "Merge with receipts" with three proof pillars (Measured / Remembered / Explained) and a no-signup CTA, replacing the feature-listing empty state.
+- Note: sandbox unavailable this round — verified by manual review; run `ng build` before deploying.
+
+---
+
+# Dark Mode (v1.5.1)
 
 - **Full dark theme**, same teal identity on deep blue-gray surfaces (`#0e1519` base). One `[data-theme='dark']` token override — every component adapts automatically because the entire UI reads from CSS variables.
 - **Sun/moon toggle** in the header; choice persists in localStorage; first visit follows the OS `prefers-color-scheme`. An inline pre-boot script in `index.html` applies the theme before Angular loads, so there's no light-mode flash.

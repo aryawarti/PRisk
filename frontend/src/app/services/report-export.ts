@@ -42,7 +42,7 @@ export function buildMarkdownReport(r: AnalysisResult): string {
           .join('\n')}\n`
       : '';
 
-  return `## ${emoji} PRisk Analysis — ${cr.score}/100 · ${cr.recommendation}
+  return `## ${emoji} PRisk Score: ${cr.score}/100 — ${cr.recommendation}
 
 **PR:** [${r.name || r.pr_title}](${r.pr_url}) · **Repo:** \`${r.repo_name}\` · **Author:** @${r.author}
 ${r.analysis_quality && r.analysis_quality.mode !== 'full' ? `\n> ⚠️ **${r.analysis_quality.mode === 'degraded' ? 'Heuristic analysis' : 'Partial AI analysis'}:** ${r.analysis_quality.note}\n` : ''}

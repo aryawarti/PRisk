@@ -818,7 +818,6 @@
 
 /* ── Confidence gauge ── */
 .gauge {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -827,10 +826,23 @@
   padding: 6px 10px;
 }
 
+.gauge-name {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--brand-700);
+}
+
+.gauge-dial {
+  position: relative;
+}
+
 .gauge svg {
   width: 118px;
   height: 118px;
   transform: rotate(-90deg);
+  display: block;
 }
 
 .gauge-track {
@@ -861,9 +873,10 @@
 
 .gauge-center {
   position: absolute;
-  top: 34px;
+  top: 50%;
   left: 0;
   right: 0;
+  transform: translateY(-50%);
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -928,6 +941,88 @@
 .pulse-ring {
   transform-origin: center;
   animation: ring-pulse 2.6s ease-in-out infinite;
+}
+
+/* ── Landing hero (idle state) ── */
+.hero {
+  padding: 48px 40px;
+}
+
+.hero-kicker {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--brand-700);
+}
+
+.hero-title {
+  margin: 0 0 12px;
+  max-width: 560px;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--ink-900);
+}
+
+.hero-sub {
+  margin: 0 0 28px;
+  max-width: 540px;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--ink-500);
+}
+
+.hero-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+  max-width: 720px;
+  margin-bottom: 26px;
+  text-align: left;
+}
+
+.hero-pillar {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+.hero-pillar-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--brand-700);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hero-pillar-copy {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-500);
+}
+
+.hero-cta {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-700);
+}
+
+@media (max-width: 860px) {
+  .hero {
+    padding: 32px 20px;
+  }
+
+  .hero-pillars {
+    grid-template-columns: 1fr;
+  }
 }
 
 @keyframes ring-pulse {

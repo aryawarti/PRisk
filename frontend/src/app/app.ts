@@ -39,7 +39,7 @@ export class AppComponent {
   readonly copied = signal(false);
   /** When viewing a saved snapshot from history: its capture timestamp. */
   readonly snapshotTime = signal<number | null>(null);
-  readonly errorKind = signal<'url' | 'notfound' | 'llm' | 'generic'>('generic');
+  readonly errorKind = signal<'url' | 'notfound' | 'llm' | 'rate' | 'generic'>('generic');
   /** Theme is applied to <html> pre-boot by index.html; this mirrors it. */
   readonly theme = signal<'light' | 'dark'>(
     (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') ?? 'light',
@@ -175,11 +175,12 @@ export class AppComponent {
     this.state.set('error');
   }
 
-  private classifyError(message: string): 'url' | 'notfound' | 'llm' | 'generic' {
+  private classifyError(message: string): 'url' | 'notfound' | 'llm' | 'rate' | 'generic' {
     const lowered = message.toLowerCase();
     if (lowered.includes('invalid github pr url')) return 'url';
     if (lowered.includes('not found')) return 'notfound';
     if (lowered.includes('ai analysis unavailable')) return 'llm';
+    if (lowered.includes('rate limit')) return 'rate';
     return 'generic';
   }
 
@@ -191,6 +192,8 @@ export class AppComponent {
         return 'Pull request not found';
       case 'llm':
         return 'AI unavailable — no report generated';
+      case 'rate':
+        return 'Taking a short breather';
       default:
         return 'Analysis failed';
     }

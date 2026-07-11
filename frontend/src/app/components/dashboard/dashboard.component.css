@@ -3,6 +3,160 @@
   gap: 14px;
 }
 
+/* ═══ Decide → Prove → Act zones ═══ */
+.zone {
+  display: grid;
+  gap: 10px;
+  animation: card-in 0.35s var(--ease) backwards;
+}
+
+.zone-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--brand-700);
+}
+
+/* Decide: the three signals that moved the score most */
+.decide-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.decide-driver {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+.decide-driver[data-direction='down'] {
+  border-left-color: var(--red-500);
+}
+
+.decide-driver[data-direction='up'] {
+  border-left-color: var(--green-500);
+}
+
+.decide-points {
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.decide-driver[data-direction='down'] .decide-points {
+  color: var(--red-700);
+}
+
+.decide-driver[data-direction='up'] .decide-points {
+  color: var(--green-700);
+}
+
+.decide-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-700);
+}
+
+/* Act: ranked next steps with impact estimates */
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+.action-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--brand-100);
+  color: var(--brand-900);
+  font-size: 12.5px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.action-text {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-700);
+}
+
+.action-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.action-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--ink-500);
+}
+
+.action-tag[data-kind='fix'] {
+  border-color: var(--amber-border);
+  background: var(--amber-100);
+  color: var(--amber-700);
+}
+
+.action-impact {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--green-700);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.full-report-heading {
+  margin: 10px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+@media (max-width: 860px) {
+  .decide-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-row {
+    flex-wrap: wrap;
+  }
+}
+
 /* ── Section cards ── */
 .section-card {
   border: 1px solid var(--border);
