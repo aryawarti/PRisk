@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import {
@@ -20,6 +21,13 @@ interface ProgressStep {
   status: 'active' | 'done';
 }
 
+interface TriageItem {
+  url: string;
+  status: 'queued' | 'running' | 'done' | 'error';
+  report: AnalysisResult | null;
+  error: string;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -29,6 +37,9 @@ interface ProgressStep {
 })
 export class AppComponent {
   prUrl = '';
+  triageInput = '';
+
+  static readonly TRIAGE_MAX = 5;
 
   // Signals: change detection works reliably in this zoneless app even when
   // updates arrive from fetch/stream callbacks outside Angular's event system.
@@ -40,6 +51,8 @@ export class AppComponent {
   /** When viewing a saved snapshot from history: its capture timestamp. */
   readonly snapshotTime = signal<number | null>(null);
   readonly errorKind = signal<'url' | 'notfound' | 'llm' | 'rate' | 'generic'>('generic');
+  readonly mode = signal<'single' | 'triage'>('single');
+  readonly triageResults = signal<TriageItem[]>([]);
   /** Theme is applied to <html> pre-boot by index.html; this mirrors it. */
   readonly theme = signal<'light' | 'dark'>(
     (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') ?? 'light',
@@ -74,6 +87,7 @@ export class AppComponent {
 
     this.state.set('loading');
     this.result.set(null);
+    this.triageResults.set([]);
     this.errorMessage.set('');
     this.snapshotTime.set(null);
     this.progressSteps.set([{ stage: 'connect', label: 'Connecting to analysis engine…', status: 'active' }]);
@@ -101,6 +115,153 @@ export class AppComponent {
       }
       this.fail((err as Error)?.message || 'Something went wrong while analysing this pull request.');
     }
+  }
+
+  setMode(mode: 'single' | 'triage'): void {
+    if (this.state() === 'loading') return;
+    this.mode.set(mode);
+  }
+
+  /** Valid, deduplicated PR URLs from the triage textarea (capped). */
+  get triageUrls(): string[] {
+    const urls = this.triageInput
+      .split(/\s+/)
+      .map((u) => u.trim())
+      .filter((u) => AppComponent.PR_URL_PATTERN.test(u));
+    return [...new Set(urls)].slice(0, AppComponent.TRIAGE_MAX);
+  }
+
+  /**
+   * Triage mode: analyse up to 5 PRs sequentially (kind to the backend and
+   * to LLM quotas) and rank them riskiest-first as they complete.
+   */
+  async analyseTriage(): Promise<void> {
+    const urls = this.triageUrls;
+    if (this.state() === 'loading') return;
+    if (!urls.length) {
+      this.errorKind.set('url');
+      this.errorMessage.set('No valid pull request links found. Paste one URL per line — GitHub or Gitea.');
+      this.state.set('error');
+      return;
+    }
+
+    this.result.set(null);
+    this.errorMessage.set('');
+    this.snapshotTime.set(null);
+    this.triageResults.set(urls.map((url) => ({ url, status: 'queued' as const, report: null, error: '' })));
+    this.state.set('loading');
+    this.abortController = new AbortController();
+
+    const total = urls.length;
+    for (let i = 0; i < total; i++) {
+      if (this.abortController.signal.aborted) return;
+      this.patchTriage(i, { status: 'running' });
+      this.progressSteps.set([
+        { stage: 'triage', label: `PR ${i + 1} of ${total} — connecting…`, status: 'active' },
+      ]);
+
+      const outcome = await this.runOneForTriage(urls[i], i + 1, total);
+      if (outcome.aborted) return;
+      if (outcome.report) {
+        this.patchTriage(i, { status: 'done', report: outcome.report });
+        this.history.record(outcome.report);
+      } else {
+        this.patchTriage(i, { status: 'error', error: outcome.error ?? 'Analysis failed.' });
+      }
+    }
+
+    this.progressSteps.set([]);
+    this.state.set('done');
+  }
+
+  private patchTriage(index: number, patch: Partial<TriageItem>): void {
+    this.triageResults.update((items) => items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  }
+
+  private async runOneForTriage(
+    url: string,
+    position: number,
+    total: number,
+  ): Promise<{ report?: AnalysisResult; error?: string; aborted?: boolean }> {
+    let report: AnalysisResult | undefined;
+    let error: string | undefined;
+
+    try {
+      await this.analysisService.analysePRStream(
+        url,
+        (event) => {
+          if (event.type === 'status') {
+            this.pushStep(event.stage, `PR ${position}/${total} — ${event.label}`);
+          } else if (event.type === 'result') {
+            report = event.payload;
+          } else {
+            error = event.message;
+          }
+        },
+        this.abortController?.signal,
+      );
+    } catch (err) {
+      if ((err as Error)?.name === 'AbortError') return { aborted: true };
+      if (err instanceof StreamTransportError) {
+        try {
+          report = await firstValueFrom(this.analysisService.analysePR(url));
+        } catch (fallbackErr) {
+          error = (fallbackErr as Error)?.message;
+        }
+      } else {
+        error = (err as Error)?.message;
+      }
+    }
+
+    if (report) return { report };
+    return { error: error ?? 'The analysis stream ended unexpectedly.' };
+  }
+
+  /** Board order: completed (riskiest first), then running, queued, failed. */
+  get sortedTriage(): TriageItem[] {
+    const rank: Record<TriageItem['status'], number> = { done: 0, running: 1, queued: 2, error: 3 };
+    return [...this.triageResults()].sort((a, b) => {
+      if (a.status !== b.status) return rank[a.status] - rank[b.status];
+      if (a.status === 'done' && b.status === 'done' && a.report && b.report) {
+        return a.report.confidence_report.score - b.report.confidence_report.score;
+      }
+      return 0;
+    });
+  }
+
+  openTriageItem(item: TriageItem): void {
+    if (item.status !== 'done' || !item.report) return;
+    this.snapshotTime.set(null);
+    this.result.set(item.report);
+  }
+
+  backToTriage(): void {
+    this.result.set(null);
+  }
+
+  /** The single most damaging signal for a triage card's one-line summary. */
+  triageTopRisk(item: TriageItem): string {
+    const drivers = item.report?.confidence_report?.score_drivers;
+    if (!drivers) return '';
+    const all = [
+      ...(drivers.blast_radius ?? []),
+      ...(drivers.engineering ?? []),
+      ...(drivers.testing ?? []),
+      ...(drivers.complexity ?? []),
+    ].filter((d) => d.points < 0);
+    if (!all.length) return 'No significant risk signals';
+    return all.sort((a, b) => a.points - b.points)[0].label;
+  }
+
+  triageTitle(item: TriageItem): string {
+    if (item.report) return item.report.name || item.report.pr_title || item.url;
+    return item.url.replace(/^https?:\/\//, '');
+  }
+
+  triageSub(item: TriageItem): string {
+    if (!item.report) return '';
+    const num = this.prNumber(item.url);
+    return `${item.report.repo_name}${num ? ' #' + num : ''}`;
   }
 
   /**
@@ -216,10 +377,12 @@ export class AppComponent {
     this.abortController = null;
     this.state.set('idle');
     this.result.set(null);
+    this.triageResults.set([]);
     this.errorMessage.set('');
     this.progressSteps.set([]);
     this.snapshotTime.set(null);
     this.prUrl = '';
+    this.triageInput = '';
   }
 
   get stateLabel(): string {

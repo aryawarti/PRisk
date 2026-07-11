@@ -41,9 +41,29 @@
 
   <!-- ═══ Command bar: the product's front door ═══ -->
   <section class="command-panel">
-    <label class="field-label" for="pr-url">Pull Request URL <span class="field-label-detail">GitHub or Gitea</span></label>
+    <div class="command-top">
+      <label class="field-label" for="pr-url">Pull Request URL <span class="field-label-detail">GitHub or Gitea</span></label>
+      <div class="mode-row" role="tablist">
+        <button
+          class="mode-chip"
+          type="button"
+          [class.mode-active]="mode() === 'single'"
+          (click)="setMode('single')"
+        >
+          Single PR
+        </button>
+        <button
+          class="mode-chip"
+          type="button"
+          [class.mode-active]="mode() === 'triage'"
+          (click)="setMode('triage')"
+        >
+          Triage board <span class="mode-hint">up to 5</span>
+        </button>
+      </div>
+    </div>
 
-    <div class="command-row">
+    <div class="command-row" *ngIf="mode() === 'single'">
       <input
         id="pr-url"
         class="pr-input"
@@ -71,6 +91,35 @@
       >
         Reset
       </button>
+    </div>
+
+    <div class="command-row command-row-triage" *ngIf="mode() === 'triage'">
+      <textarea
+        class="pr-input pr-textarea"
+        rows="4"
+        [(ngModel)]="triageInput"
+        placeholder="One pull request URL per line — GitHub or Gitea, up to 5.&#10;https://github.com/owner/repo/pull/42&#10;https://github.com/owner/repo/pull/43"
+        [disabled]="state() === 'loading'"
+      ></textarea>
+      <div class="triage-actions">
+        <button
+          class="primary-action"
+          type="button"
+          (click)="analyseTriage()"
+          [disabled]="!triageUrls.length || state() === 'loading'"
+        >
+          <span class="button-spinner" *ngIf="state() === 'loading'"></span>
+          {{ state() === 'loading' ? 'Analysing…' : 'Analyse ' + triageUrls.length + ' PR' + (triageUrls.length === 1 ? '' : 's') }}
+        </button>
+        <button
+          class="secondary-action"
+          type="button"
+          (click)="reset()"
+          [disabled]="state() === 'idle' && !triageInput"
+        >
+          Reset
+        </button>
+      </div>
     </div>
 
     <!-- Live streaming progress trace -->
@@ -143,7 +192,11 @@
 
   <!-- ═══ Report workspace: full width ═══ -->
   <main class="results-area">
-    <div class="results-panel" *ngIf="result() as report; else emptyState">
+    <div class="results-panel" *ngIf="result() as report; else nonReport">
+      <button class="back-to-triage" type="button" *ngIf="triageResults().length" (click)="backToTriage()">
+        ← Back to triage board
+      </button>
+
       <div class="snapshot-bar" *ngIf="snapshotTime() as savedAt" role="status">
         <span class="snapshot-text">
           Saved snapshot from {{ timeAgo(savedAt) }} — the PR may have new commits since.
@@ -235,6 +288,50 @@
 
       <app-dashboard [result]="report"></app-dashboard>
     </div>
+
+    <ng-template #nonReport>
+      <div class="triage-board" *ngIf="triageResults().length; else emptyState">
+        <div class="triage-head">
+          <p class="zone-label-app">Triage board</p>
+          <p class="triage-sub">Ranked riskiest first — click a card to open the full report.</p>
+        </div>
+
+        <div class="triage-grid">
+          <button
+            class="triage-card"
+            type="button"
+            *ngFor="let item of sortedTriage"
+            [attr.data-status]="item.status"
+            (click)="openTriageItem(item)"
+            [disabled]="item.status !== 'done'"
+          >
+            <span class="triage-score" *ngIf="item.status === 'done' && item.report"
+              [attr.data-tone]="item.report.confidence_report.recommendation_color">
+              {{ item.report.confidence_report.score }}
+            </span>
+            <span class="triage-score triage-score-pending" *ngIf="item.status === 'running'">
+              <span class="button-spinner triage-spinner"></span>
+            </span>
+            <span class="triage-score triage-score-pending" *ngIf="item.status === 'queued'">…</span>
+            <span class="triage-score triage-score-error" *ngIf="item.status === 'error'">!</span>
+
+            <span class="triage-body">
+              <span class="triage-title" [attr.title]="item.url">{{ triageTitle(item) }}</span>
+
+              <span class="triage-meta" *ngIf="item.status === 'done' && item.report">
+                {{ triageSub(item) }} · {{ item.report.confidence_report.recommendation }}
+                <span class="triage-guardrail" *ngIf="item.report.confidence_report.guardrails?.length">Guardrail</span>
+              </span>
+              <span class="triage-risk" *ngIf="item.status === 'done'">{{ triageTopRisk(item) }}</span>
+
+              <span class="triage-meta" *ngIf="item.status === 'running'">Analysing…</span>
+              <span class="triage-meta" *ngIf="item.status === 'queued'">Queued</span>
+              <span class="triage-meta triage-error-text" *ngIf="item.status === 'error'">{{ item.error }}</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </ng-template>
 
     <ng-template #emptyState>
       <div class="empty-panel hero" *ngIf="state() !== 'loading'; else loadingPanel">
