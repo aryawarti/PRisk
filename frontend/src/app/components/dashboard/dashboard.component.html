@@ -1,4 +1,10 @@
 <div class="dashboard">
+  <!-- Guardrails: deterministic overrides the score cannot bypass -->
+  <div class="guardrail-banner" *ngIf="result.confidence_report.guardrails?.length" role="status">
+    <span class="guardrail-title">Guardrail applied</span>
+    <span class="guardrail-note" *ngFor="let rail of result.confidence_report.guardrails">{{ rail }}</span>
+  </div>
+
   <!-- ═══ DECIDE: why this score, before anything else ═══ -->
   <section class="zone zone-decide" *ngIf="topDrivers.length">
     <p class="zone-label">Why this score</p>

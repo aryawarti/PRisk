@@ -45,7 +45,8 @@ export class AppComponent {
     (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') ?? 'light',
   );
 
-  private static readonly PR_URL_PATTERN = /github\.com\/[^\/\s]+\/[^\/\s]+\/pull\/\d+/i;
+  /** GitHub (/pull/N) or any Gitea host (/pulls/N). */
+  private static readonly PR_URL_PATTERN = /^https?:\/\/[^\/\s]+\/[^\/\s]+\/[^\/\s]+\/(pull|pulls)\/\d+/i;
 
   private abortController: AbortController | null = null;
   private copiedTimer: ReturnType<typeof setTimeout> | null = null;
@@ -65,7 +66,7 @@ export class AppComponent {
       this.snapshotTime.set(null);
       this.errorKind.set('url');
       this.errorMessage.set(
-        'That link doesn’t point to a GitHub pull request. It needs the owner, repository, and PR number.',
+        'That link doesn’t point to a pull request. It needs the host, owner, repository, and PR number.',
       );
       this.state.set('error');
       return;
@@ -232,6 +233,12 @@ export class AppComponent {
       default:
         return 'Waiting';
     }
+  }
+
+  /** Extract the PR number from the URL for the meta chip (GitHub or Gitea). */
+  prNumber(url: string): string {
+    const match = url?.match(/\/pulls?\/(\d+)/);
+    return match ? match[1] : '';
   }
 
   /** Circumference-based offset for the SVG confidence gauge (r = 34). */

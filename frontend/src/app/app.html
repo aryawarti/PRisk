@@ -39,116 +39,110 @@
     </div>
   </header>
 
-  <section class="workspace">
-    <aside class="sidebar">
-      <div class="input-panel">
-        <label class="field-label" for="pr-url">GitHub Pull Request URL</label>
+  <!-- ═══ Command bar: the product's front door ═══ -->
+  <section class="command-panel">
+    <label class="field-label" for="pr-url">Pull Request URL <span class="field-label-detail">GitHub or Gitea</span></label>
 
-        <div class="input-row">
-          <input
-            id="pr-url"
-            class="pr-input"
-            type="url"
-            [(ngModel)]="prUrl"
-            placeholder="https://github.com/owner/repo/pull/42"
-            [disabled]="state() === 'loading'"
-            [class.input-invalid]="state() === 'error' && errorKind() === 'url'"
-            (keydown.enter)="analyse()"
-          />
-        </div>
+    <div class="command-row">
+      <input
+        id="pr-url"
+        class="pr-input"
+        type="url"
+        [(ngModel)]="prUrl"
+        placeholder="https://github.com/owner/repo/pull/42  ·  https://your-gitea/owner/repo/pulls/42"
+        [disabled]="state() === 'loading'"
+        [class.input-invalid]="state() === 'error' && errorKind() === 'url'"
+        (keydown.enter)="analyse()"
+      />
+      <button
+        class="primary-action"
+        type="button"
+        (click)="analyse()"
+        [disabled]="!prUrl.trim() || state() === 'loading'"
+      >
+        <span class="button-spinner" *ngIf="state() === 'loading'"></span>
+        {{ state() === 'loading' ? 'Analysing…' : 'Analyse PR' }}
+      </button>
+      <button
+        class="secondary-action"
+        type="button"
+        (click)="reset()"
+        [disabled]="state() === 'idle' && !prUrl"
+      >
+        Reset
+      </button>
+    </div>
 
-        <div class="action-row">
-          <button
-            class="primary-action"
-            type="button"
-            (click)="analyse()"
-            [disabled]="!prUrl.trim() || state() === 'loading'"
-          >
-            <span class="button-spinner" *ngIf="state() === 'loading'"></span>
-            {{ state() === 'loading' ? 'Analysing…' : 'Analyse PR' }}
-          </button>
-          <button
-            class="secondary-action"
-            type="button"
-            (click)="reset()"
-            [disabled]="state() === 'idle' && !prUrl"
-          >
-            Reset
-          </button>
-        </div>
+    <!-- Live streaming progress trace -->
+    <div class="progress-trace" *ngIf="state() === 'loading' && progressSteps().length" aria-live="polite">
+      <p class="trace-heading">Live analysis</p>
+      <ol class="trace-list">
+        <li
+          class="trace-step"
+          *ngFor="let step of progressSteps()"
+          [attr.data-status]="step.status"
+        >
+          <span class="trace-marker" aria-hidden="true"></span>
+          <span class="trace-label">{{ step.label }}</span>
+        </li>
+      </ol>
+    </div>
 
-        <!-- Live streaming progress trace -->
-        <div class="progress-trace" *ngIf="state() === 'loading' && progressSteps().length" aria-live="polite">
-          <p class="trace-heading">Live analysis</p>
-          <ol class="trace-list">
-            <li
-              class="trace-step"
-              *ngFor="let step of progressSteps()"
-              [attr.data-status]="step.status"
+    <div class="error-panel" *ngIf="state() === 'error'" [attr.data-kind]="errorKind()">
+      <div class="error-head">
+        <span class="error-icon" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" />
+            <path d="M8 4.5v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            <circle cx="8" cy="11.2" r="0.9" fill="currentColor" />
+          </svg>
+        </span>
+        <p class="panel-title">{{ errorTitle }}</p>
+      </div>
+      <p class="panel-copy">{{ errorMessage() }}</p>
+      <div class="error-hint" *ngIf="errorKind() === 'url'">
+        <span class="error-hint-label">Expected format</span>
+        <code class="error-example">GitHub: https://github.com/owner/repo/pull/42</code>
+        <code class="error-example">Gitea: https://your-gitea-host/owner/repo/pulls/42</code>
+      </div>
+      <p class="panel-copy error-subtle" *ngIf="errorKind() === 'llm'">
+        Nothing was scored or guessed. Your PR link is fine — try again shortly.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ Recent analyses: compact horizontal strip ═══ -->
+  <section class="history-strip" *ngIf="history.entries().length && state() !== 'loading'">
+    <span class="history-title">Recent</span>
+    <div class="history-scroll">
+      <button
+        class="history-card"
+        type="button"
+        *ngFor="let entry of history.entries()"
+        (click)="openHistory(entry)"
+        [attr.title]="'Open saved report — ' + entry.pr_url"
+      >
+        <span class="history-score" [attr.data-tone]="entry.color">{{ entry.score }}</span>
+        <span class="history-meta">
+          <span class="history-name">{{ entry.title }}</span>
+          <span class="history-sub">
+            {{ entry.repo_name }} · {{ timeAgo(entry.timestamp) }}
+            <span
+              class="history-delta"
+              *ngIf="entry.delta !== null && entry.delta !== 0"
+              [attr.data-direction]="entry.delta > 0 ? 'up' : 'down'"
             >
-              <span class="trace-marker" aria-hidden="true"></span>
-              <span class="trace-label">{{ step.label }}</span>
-            </li>
-          </ol>
-        </div>
-
-        <div class="error-panel" *ngIf="state() === 'error'" [attr.data-kind]="errorKind()">
-          <div class="error-head">
-            <span class="error-icon" aria-hidden="true">
-              <svg viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" />
-                <path d="M8 4.5v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                <circle cx="8" cy="11.2" r="0.9" fill="currentColor" />
-              </svg>
+              {{ entry.delta > 0 ? '▲ +' + entry.delta : '▼ ' + entry.delta }}
             </span>
-            <p class="panel-title">{{ errorTitle }}</p>
-          </div>
-          <p class="panel-copy">{{ errorMessage() }}</p>
-          <div class="error-hint" *ngIf="errorKind() === 'url'">
-            <span class="error-hint-label">Expected format</span>
-            <code class="error-example">https://github.com/owner/repo/pull/42</code>
-          </div>
-          <p class="panel-copy error-subtle" *ngIf="errorKind() === 'llm'">
-            Nothing was scored or guessed. Your PR link is fine — try again shortly.
-          </p>
-        </div>
-      </div>
+          </span>
+        </span>
+      </button>
+    </div>
+    <button class="history-clear" type="button" (click)="history.clear()">Clear</button>
+  </section>
 
-      <!-- Recent analyses with score deltas -->
-      <div class="history-panel" *ngIf="history.entries().length">
-        <div class="history-head">
-          <p class="history-title">Recent analyses</p>
-          <button class="history-clear" type="button" (click)="history.clear()">Clear</button>
-        </div>
-        <ul class="history-list">
-          <li *ngFor="let entry of history.entries()">
-            <button
-              class="history-item"
-              type="button"
-              (click)="openHistory(entry)"
-              [disabled]="state() === 'loading'"
-              [attr.title]="'Open saved report — ' + entry.pr_url"
-            >
-              <span class="history-score" [attr.data-tone]="entry.color">{{ entry.score }}</span>
-              <span class="history-meta">
-                <span class="history-name">{{ entry.title }}</span>
-                <span class="history-sub">
-                  {{ entry.repo_name }} · {{ timeAgo(entry.timestamp) }}
-                  <span
-                    class="history-delta"
-                    *ngIf="entry.delta !== null && entry.delta !== 0"
-                    [attr.data-direction]="entry.delta > 0 ? 'up' : 'down'"
-                  >
-                    {{ entry.delta > 0 ? '▲ +' + entry.delta : '▼ ' + entry.delta }}
-                  </span>
-                </span>
-              </span>
-            </button>
-          </li>
-        </ul>
-      </div>
-    </aside>
-
+  <!-- ═══ Report workspace: full width ═══ -->
+  <main class="results-area">
     <div class="results-panel" *ngIf="result() as report; else emptyState">
       <div class="snapshot-bar" *ngIf="snapshotTime() as savedAt" role="status">
         <span class="snapshot-text">
@@ -171,25 +165,37 @@
 
       <div class="results-header" [attr.data-tone]="report.confidence_report.recommendation_color">
         <div class="results-header-body">
-          <div class="results-info-grid">
-            <div class="results-info-cell">
-              <span class="info-label">PR Title</span>
-              <span class="info-value info-title">{{ report.name || report.pr_title }}</span>
+          <div class="results-identity">
+            <h2 class="pr-headline" [attr.title]="report.name || report.pr_title">
+              {{ report.name || report.pr_title }}
+            </h2>
+
+            <div class="pr-meta">
+              <span class="meta-chip meta-author" [attr.title]="'Author: ' + report.author">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="5.2" r="3" stroke="currentColor" stroke-width="1.5" />
+                  <path d="M2.5 14a5.5 5.5 0 0 1 11 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+                {{ report.author }}
+              </span>
+
+              <span class="meta-chip" [attr.title]="'Repository: ' + report.repo_name">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M4.5 2h8v12l-4-2.5-4 2.5V2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                </svg>
+                {{ report.repo_name }}
+              </span>
+
+              <span class="meta-chip" *ngIf="prNumber(report.pr_url)">#{{ prNumber(report.pr_url) }}</span>
+
+              <a class="meta-chip meta-link" [href]="report.pr_url" target="_blank" rel="noopener noreferrer">
+                View on GitHub
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M6 3h7v7M13 3 7 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </a>
             </div>
-            <div class="results-info-cell">
-              <span class="info-label">Repository</span>
-              <span class="info-value">{{ report.repo_name }}</span>
-            </div>
-            <div class="results-info-cell">
-              <span class="info-label">Author</span>
-              <span class="info-value">{{ report.author }}</span>
-            </div>
-            <div class="results-info-cell">
-              <span class="info-label">Source</span>
-              <a class="info-value info-link" [href]="report.pr_url" target="_blank" rel="noopener noreferrer"
-                >View on GitHub →</a
-              >
-            </div>
+
             <div class="results-actions">
               <button class="copy-action" type="button" (click)="copyReport()">
                 <svg *ngIf="!copied()" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -270,7 +276,7 @@
           </div>
         </div>
 
-        <p class="hero-cta">Paste a pull request URL to see it work — no signup.</p>
+        <p class="hero-cta">Paste a pull request URL above to see it work — no signup.</p>
       </div>
 
       <ng-template #loadingPanel>
@@ -279,5 +285,5 @@
         </div>
       </ng-template>
     </ng-template>
-  </section>
+  </main>
 </div>

@@ -107,6 +107,7 @@ export interface AnalysisResult {
     recommendation_color: 'green' | 'amber' | 'red';
     executive_summary: string;
     errors_during_analysis: string[];
+    guardrails: string[];
     score_drivers: {
       blast_radius: ScoreDriver[];
       engineering: ScoreDriver[];
